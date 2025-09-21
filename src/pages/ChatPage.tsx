@@ -83,15 +83,15 @@ interface Message {
 }
 
 const ChatWrapper = styled.div`
-  padding: 30px;
+  padding: 40px;
   background-color: #f0f2f5;
-  height: 100vh;
+  min-height: 100vh;
   font-family: 'Roboto', sans-serif;
+  max-width: 1400px;
+  margin: 0 auto;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  max-width: 1200px;
-  margin: 0 auto;
-  overflow: hidden;
 `;
 
 const ChatHeader = styled.div`
@@ -100,8 +100,8 @@ const ChatHeader = styled.div`
   align-items: center;
   margin-bottom: 30px;
   background-color: white;
-  padding: 20px 30px;
-  border-radius: 12px;
+  padding: 24px 35px;
+  border-radius: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 `;
 
@@ -322,10 +322,7 @@ const ChatPage: React.FC = () => {
 
   // 음성 인식 초기화
   useEffect(() => {
-    if (
-      'SpeechRecognition' in window ||
-      'webkitSpeechRecognition' in window
-    ) {
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
       const SpeechRecognition =
         window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognitionInstance = new SpeechRecognition();
@@ -476,7 +473,9 @@ const ChatPage: React.FC = () => {
     <ChatWrapper>
       <ChatHeader>
         <PageTitle>🤖 AI 상담</PageTitle>
-        <NavButton onClick={() => navigate('/')}>홈으로</NavButton>
+        <NavButton onClick={() => navigate('/dashboard')}>
+          대시보드 메인
+        </NavButton>
       </ChatHeader>
 
       <ChatContainer>

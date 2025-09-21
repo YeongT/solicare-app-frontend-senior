@@ -12,39 +12,28 @@ interface MealRecord {
 
 // Styled Components
 const DietWrapper = styled.div`
-  padding: 20px;
+  padding: 40px;
   background-color: #f0f2f5;
   min-height: 100vh;
   font-family: 'Roboto', sans-serif;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   box-sizing: border-box;
-
-  @media (min-width: 768px) {
-    padding: 40px;
-  }
 `;
 
 const DietHeader = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 15px;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 30px;
   background-color: white;
-  padding: 20px;
+  padding: 24px 35px;
   border-radius: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-
-  @media (min-width: 768px) {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding: 24px 35px;
-  }
 `;
 
 const PageTitle = styled.h2`
-  font-size: 24px;
+  font-size: 28px;
   color: #343a40;
   margin: 0;
   font-weight: 700;
@@ -241,25 +230,32 @@ const EmptyMessage = styled.div`
 
 const DietPage: React.FC = () => {
   const navigate = useNavigate();
-  
+
   // localStorage에서 식사 데이터 불러오기
   const [meals, setMeals] = useState<MealRecord[]>(() => {
     const savedMeals = localStorage.getItem('meals');
-    return savedMeals ? JSON.parse(savedMeals) : [
-      {
-        id: 1,
-        name: '아침: 계란후라이, 토스트',
-        time: '08:00',
-        date: '2024-09-14',
-      },
-      { id: 2, name: '점심: 김치찌개, 밥', time: '12:30', date: '2024-09-14' },
-      {
-        id: 3,
-        name: '저녁: 연어구이, 샐러드',
-        time: '18:00',
-        date: '2024-09-14',
-      },
-    ];
+    return savedMeals
+      ? JSON.parse(savedMeals)
+      : [
+          {
+            id: 1,
+            name: '아침: 계란후라이, 토스트',
+            time: '08:00',
+            date: '2024-09-14',
+          },
+          {
+            id: 2,
+            name: '점심: 김치찌개, 밥',
+            time: '12:30',
+            date: '2024-09-14',
+          },
+          {
+            id: 3,
+            name: '저녁: 연어구이, 샐러드',
+            time: '18:00',
+            date: '2024-09-14',
+          },
+        ];
   });
 
   // 식사 데이터가 변경될 때마다 localStorage에 저장
@@ -313,7 +309,9 @@ const DietPage: React.FC = () => {
     <DietWrapper>
       <DietHeader>
         <PageTitle>🍽️ 식사 기록</PageTitle>
-        <NavButton onClick={() => navigate('/')}>홈으로</NavButton>
+        <NavButton onClick={() => navigate('/dashboard')}>
+          대시보드 메인
+        </NavButton>
       </DietHeader>
 
       <AddMealForm>

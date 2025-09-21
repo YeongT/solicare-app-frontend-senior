@@ -17,11 +17,9 @@ const ExerciseWrapper = styled.div`
   background-color: #f0f2f5;
   min-height: 100vh;
   font-family: 'Roboto', sans-serif;
-  max-width: 1800px;
+  max-width: 1400px;
   margin: 0 auto;
   box-sizing: border-box;
-  zoom: 0.9;
-  transform-origin: top center;
 `;
 
 const ExerciseHeader = styled.div`
@@ -30,8 +28,8 @@ const ExerciseHeader = styled.div`
   align-items: center;
   margin-bottom: 30px;
   background-color: white;
-  padding: 20px 30px;
-  border-radius: 12px;
+  padding: 24px 35px;
+  border-radius: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 `;
 
@@ -127,30 +125,6 @@ const ProgressText = styled.p`
   font-size: 14px;
   color: #666;
   margin-top: 10px;
-`;
-
-const ActionButton = styled.button`
-  width: 100%;
-  padding: 15px;
-  border: none;
-  border-radius: 8px;
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  background-color: #007bff;
-  color: white;
-  transition:
-    background-color 0.3s ease,
-    transform 0.2s ease;
-
-  &:hover {
-    background-color: #0056b3;
-    transform: translateY(-2px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
 `;
 
 const TipCard = styled.div`
@@ -312,7 +286,9 @@ const ExercisePage: React.FC = () => {
           <ToggleViewButton onClick={() => setShowWeekly(!showWeekly)}>
             {showWeekly ? '오늘' : '주간'}
           </ToggleViewButton>
-          <NavButton onClick={() => navigate('/')}>홈으로</NavButton>
+          <NavButton onClick={() => navigate('/dashboard')}>
+            대시보드 메인
+          </NavButton>
         </div>
       </ExerciseHeader>
 

@@ -254,12 +254,12 @@ const HomePage: React.FC = () => {
       </TopBar>
       <MainBody>
         <MainCard>
-          <MainTitle>내 건강, 내 일상, 내 손안에</MainTitle>
+          <MainTitle>건강한 일상을 위한 스마트한 관리</MainTitle>
           <MainDesc>
-            <b>Solicare</b> 시니어 포탈은 어르신을 위한 맞춤 건강관리, 복약,
-            운동, 커뮤니티 서비스를 제공합니다.
+            <b>Solicare</b>와 함께 약물 복용, 식사 기록, 운동 관리, AI 상담을
+            통해
             <br />
-            쉽고 편리하게 건강을 관리하고, 다양한 정보와 소통을 경험하세요.
+            체계적이고 지속적인 건강 관리를 시작하세요.
           </MainDesc>
           {isAuthenticated && (
             <DashboardBtn onClick={() => navigate('/dashboard')}>
@@ -269,25 +269,27 @@ const HomePage: React.FC = () => {
         </MainCard>
         <InfoSection>
           <InfoCard>
-            <InfoCardTitle>실시간 건강지표</InfoCardTitle>
+            <InfoCardTitle>💊 약물 복용 관리</InfoCardTitle>
             <InfoCardDesc>
-              심박수, 혈압, 체온 등 내 건강상태를 한눈에 확인
+              복용 시간 알림과 기록으로 안전하고 정확한 복약 관리
             </InfoCardDesc>
           </InfoCard>
           <InfoCard>
-            <InfoCardTitle>복약 관리</InfoCardTitle>
+            <InfoCardTitle>🍽️ 식사 기록</InfoCardTitle>
             <InfoCardDesc>
-              복약 알림과 기록으로 약 복용을 놓치지 않아요
+              간편한 식사 기록으로 건강한 식습관 형성하기
             </InfoCardDesc>
           </InfoCard>
           <InfoCard>
-            <InfoCardTitle>운동 기록</InfoCardTitle>
-            <InfoCardDesc>매일의 운동 목표와 성취를 쉽게 관리</InfoCardDesc>
+            <InfoCardTitle>🚶‍♂️ 운동 관리</InfoCardTitle>
+            <InfoCardDesc>
+              걸음 수와 운동량 추적으로 활기찬 일상 만들기
+            </InfoCardDesc>
           </InfoCard>
           <InfoCard>
-            <InfoCardTitle>커뮤니티</InfoCardTitle>
+            <InfoCardTitle>🤖 AI 음성 상담</InfoCardTitle>
             <InfoCardDesc>
-              다른 시니어와 소통하며 정보와 응원을 나눠요
+              건강 관련 궁금증을 AI와 대화로 쉽게 해결하기
             </InfoCardDesc>
           </InfoCard>
         </InfoSection>

@@ -4,15 +4,25 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   mockExerciseData,
   mockMedications,
-  mockDietData,
   mockNotifications,
 } from '../data/mockData';
 import styled from 'styled-components';
-import {
-  GridContainer,
-  NavButton,
-  StatusBadge,
-} from '../components/StyledComponents';
+import { GridContainer, NavButton } from '../components/StyledComponents';
+
+interface MealRecord {
+  id: number;
+  name: string;
+  time: string;
+  date: string;
+}
+
+interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  time: string;
+  type: string;
+}
 
 interface Medication {
   id: number;
@@ -262,15 +272,163 @@ const NotificationTime = styled.span`
   font-weight: 500;
 `;
 
+// 오늘 식사 목록 컴포넌트
+const TodayMealsList: React.FC = () => {
+  const [todayMeals, setTodayMeals] = useState<MealRecord[]>([]);
+
+  useEffect(() => {
+    const loadTodayMeals = () => {
+      const savedMeals = localStorage.getItem('meals');
+      if (savedMeals) {
+        const meals = JSON.parse(savedMeals);
+        const today = new Date().toISOString().split('T')[0];
+        const todayMealsList = meals.filter(
+          (meal: MealRecord) => meal.date === today
+        );
+        setTodayMeals(todayMealsList);
+      }
+    };
+
+    loadTodayMeals();
+
+    // storage 이벤트 리스너로 실시간 업데이트
+    const handleStorageChange = () => {
+      loadTodayMeals();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', loadTodayMeals);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', loadTodayMeals);
+    };
+  }, []);
+
+  // 시간대별 식사 기록 상태 생성
+  const getMealStatusDisplay = () => {
+    const timeSlots = [
+      { name: '아침', startHour: 6, endHour: 12 },
+      { name: '점심', startHour: 12, endHour: 17 },
+      { name: '저녁', startHour: 17, endHour: 23 },
+    ];
+
+    return timeSlots.map((timeSlot) => {
+      // 일반 식사 시간대
+      const mealsInTimeSlot = todayMeals.filter((meal) => {
+        const mealHour = parseInt(meal.time.split(':')[0]);
+        return mealHour >= timeSlot.startHour && mealHour < timeSlot.endHour;
+      });
+
+      const recordCount = mealsInTimeSlot.length;
+      let statusText;
+
+      if (recordCount === 0) {
+        statusText = '기록되지 않음';
+      } else {
+        // 가장 최근 기록된 시간 사용
+        const latestMeal = mealsInTimeSlot[mealsInTimeSlot.length - 1];
+        statusText = `${latestMeal.time}에 기록됨`;
+      }
+
+      return (
+        <div
+          key={timeSlot.name}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '4px 0',
+            fontSize: '14px',
+          }}
+        >
+          <span style={{ fontWeight: '600', color: '#495057' }}>
+            {timeSlot.name}:
+          </span>
+          <span
+            style={{
+              color: recordCount > 0 ? '#28a745' : '#6c757d',
+              fontSize: '13px',
+            }}
+          >
+            {statusText}
+          </span>
+        </div>
+      );
+    });
+  };
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '2px',
+        padding: '8px 0',
+      }}
+    >
+      {getMealStatusDisplay()}
+    </div>
+  );
+};
+
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
 
   // localStorage에서 약물 데이터 읽어오기
   const [medications, setMedications] = useState(() => {
     const savedMedications = localStorage.getItem('medications');
     return savedMedications ? JSON.parse(savedMedications) : mockMedications;
   });
+
+  // 실제 약물 기반 알림과 기존 알림 통합
+  const generateAllNotifications = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const medicationNotifications: NotificationItem[] = [];
+
+    // 실제 약물 데이터 기반 알림 생성
+    medications.forEach((med: Medication) => {
+      if (med.timeSlots && med.timeSlots.length > 0) {
+        med.timeSlots.forEach((timeSlot) => {
+          const [hour] = timeSlot.split(':').map(Number);
+
+          // 복용 시간이 지났지만 아직 복용하지 않은 경우
+          if (currentHour >= hour && !med.taken) {
+            medicationNotifications.push({
+              id: `med-${med.id}-${timeSlot}`,
+              title: `💊 ${med.name} 복용 시간`,
+              message: `${timeSlot}에 복용 예정이었습니다. 놓치지 마세요!`,
+              time: `${Math.abs(currentHour - hour)}시간 전`,
+              type: 'medication-overdue',
+            });
+          }
+          // 복용 시간이 1시간 이내로 다가온 경우
+          else if (hour - currentHour <= 1 && hour - currentHour > 0) {
+            medicationNotifications.push({
+              id: `med-${med.id}-${timeSlot}`,
+              title: `⏰ ${med.name} 복용 예정`,
+              message: `${timeSlot}에 복용 예정입니다. 준비해주세요.`,
+              time: `${hour - currentHour}시간 후`,
+              type: 'medication-upcoming',
+            });
+          }
+        });
+      }
+    });
+
+    // 기존 일반 알림들 (약 관련 제외)
+    const generalNotifications = mockNotifications.filter(
+      (notification) => notification.type !== 'medication'
+    );
+
+    // 약물이 등록되어 있고 실제 약물 알림이 있으면 약물 알림 + 일반 알림
+    // 약물이 등록되어 있지만 알림이 없거나, 약물이 없으면 일반 알림만 표시
+    return medications.length > 0 && medicationNotifications.length > 0
+      ? [...medicationNotifications, ...generalNotifications]
+      : generalNotifications;
+  };
 
   // medications 변경 감지를 위한 useEffect
   useEffect(() => {
@@ -283,7 +441,7 @@ const Dashboard: React.FC = () => {
 
     // storage 이벤트 리스너 추가
     window.addEventListener('storage', handleStorageChange);
-    
+
     // 컴포넌트가 focus될 때마다 데이터 새로고침
     const handleFocus = () => {
       const savedMedications = localStorage.getItem('medications');
@@ -291,7 +449,7 @@ const Dashboard: React.FC = () => {
         setMedications(JSON.parse(savedMedications));
       }
     };
-    
+
     window.addEventListener('focus', handleFocus);
 
     return () => {
@@ -307,7 +465,9 @@ const Dashboard: React.FC = () => {
     weekday: 'long',
   });
 
-  const takenMedications = medications.filter((med: Medication) => med.taken).length;
+  const takenMedications = medications.filter(
+    (med: Medication) => med.taken
+  ).length;
   const totalMedications = medications.length;
 
   return (
@@ -315,7 +475,10 @@ const Dashboard: React.FC = () => {
       <HeaderWrapper>
         <Header>
           <WelcomeText>안녕하세요, 사용자님!</WelcomeText>
-          <NavButton onClick={logout}>로그아웃</NavButton>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <NavButton onClick={() => navigate('/')}>홈으로</NavButton>
+            <NavButton onClick={logout}>로그아웃</NavButton>
+          </div>
         </Header>
       </HeaderWrapper>
 
@@ -335,7 +498,7 @@ const Dashboard: React.FC = () => {
           <CardTitle>🔔 오늘의 알림</CardTitle>
 
           <NotificationScrollContainer>
-            {mockNotifications.map((notification) => (
+            {generateAllNotifications().map((notification) => (
               <NotificationItem key={notification.id}>
                 <NotificationTitle>{notification.title}</NotificationTitle>
                 <NotificationMessage>
@@ -373,7 +536,7 @@ const Dashboard: React.FC = () => {
                   color: '#2563eb',
                 }}
               >
-                📋 복용 기록
+                📈 건강 관리 현황
               </div>
               <div
                 style={{
@@ -383,18 +546,18 @@ const Dashboard: React.FC = () => {
                   fontWeight: 600,
                 }}
               >
-                최근 7일간 복용률:{' '}
-                <span style={{ color: '#28a745', fontWeight: 700 }}>86%</span>
+                꾸준한 관리로 건강을 지켜나가고 있어요
               </div>
               <div
                 style={{
                   margin: '4px 0 12px 0',
                   fontSize: '12px',
-                  color: '#ff9800',
+                  color: '#ff6b35',
                   fontWeight: 500,
+                  lineHeight: '1.3',
                 }}
               >
-                복용 성공! 건강을 지키고 있어요 👍
+                💪 오늘도 건강한 하루 보내세요! ✨
               </div>
             </div>
 
@@ -406,16 +569,16 @@ const Dashboard: React.FC = () => {
             </CardButton>
           </DashboardCard>
 
-          {/* 식단 관리 */}
+          {/* 식사 기록 */}
           <DashboardCard>
-            <CardTitle>🍽️ 식단 관리</CardTitle>
+            <CardTitle>🍽️ 식사 기록</CardTitle>
             <CardDescription style={{ marginBottom: '20px' }}>
               간편하게 식사를 기록하고
               <br />
               건강한 식습관을 만들어보세요
             </CardDescription>
 
-            {/* 오늘의 추천 메뉴 섹션 */}
+            {/* 오늘의 식사 목록 섹션 */}
             <div
               style={{
                 marginBottom: '20px',
@@ -437,44 +600,9 @@ const Dashboard: React.FC = () => {
                   gap: '6px',
                 }}
               >
-                🌟 오늘의 추천 메뉴
+                📝 오늘 식사 목록
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                }}
-              >
-                <div style={{ fontSize: '14px', color: '#6c757d' }}>
-                  <span style={{ fontWeight: '600', color: '#fd7e14' }}>
-                    아침:
-                  </span>{' '}
-                  현미밥, 된장찌개, 김치
-                </div>
-                <div style={{ fontSize: '14px', color: '#6c757d' }}>
-                  <span style={{ fontWeight: '600', color: '#20c997' }}>
-                    점심:
-                  </span>{' '}
-                  닭가슴살 샐러드, 방울토마토
-                </div>
-                <div style={{ fontSize: '14px', color: '#6c757d' }}>
-                  <span style={{ fontWeight: '600', color: '#6f42c1' }}>
-                    저녁:
-                  </span>{' '}
-                  연어구이, 브로콜리, 현미밥
-                </div>
-              </div>
-              <div
-                style={{
-                  marginTop: '8px',
-                  fontSize: '12px',
-                  color: '#28a745',
-                  fontWeight: '500',
-                }}
-              >
-                💡 균형잡힌 영양소로 구성된 건강 메뉴입니다
-              </div>
+              <TodayMealsList />
             </div>
 
             <CardButton onClick={() => navigate('/diet')}>
