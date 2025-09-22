@@ -151,10 +151,6 @@ const MedicationPage: React.FC = () => {
     localStorage.setItem('medications', JSON.stringify(medications));
   }, [medications]);
 
-  React.useEffect(() => {
-    localStorage.setItem('medications', JSON.stringify(medications));
-  }, [medications]);
-
   const [showMemo, setShowMemo] = useState(false);
 
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
