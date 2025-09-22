@@ -5,30 +5,13 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
-import Cookies from 'js-cookie';
-
-interface User {
-  name: string;
-  id: string;
-}
+import { UserProfile, Identity } from '../types/apiTypes';
+import { extractSubjectFromToken } from '../utils/tokenUtils';
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  user: User | null;
-  login: (
-    username: string,
-    password: string
-  ) => Promise<{ success: boolean; error?: string }>;
-  signup: (userData: {
-    username: string;
-    password: string;
-    name: string;
-    gender: string;
-    age: string;
-    phone: string;
-    address: string;
-    notes: string;
-  }) => Promise<{ success: boolean; error?: string }>;
+  identity: Identity | null;
+  profile: UserProfile | null;
   logout: () => void;
   loading: boolean;
 }
@@ -43,134 +26,108 @@ export const useAuth = () => {
   return context;
 };
 
+// localStorage로 변경
+const STORAGE_KEYS = {
+  IDENTITY: 'user_identity',
+  PROFILE: 'user_profile',
+} as const;
+
+// localStorage에서 값을 가져오는 함수
+const getStorageValue = (key: string): string | null => {
+  try {
+    return localStorage.getItem(key);
+  } catch (err) {
+    console.error('localStorage 읽기 실패:', err);
+    return null;
+  }
+};
+
+// localStorage에 값을 저장하는 함수
+const setStorageValue = (key: string, value: string): void => {
+  try {
+    localStorage.setItem(key, value);
+  } catch (err) {
+    console.error('localStorage 저장 실패:', err);
+  }
+};
+
+// localStorage에서 값을 삭제하는 함수
+const removeStorageValue = (key: string): void => {
+  try {
+    localStorage.removeItem(key);
+  } catch (err) {
+    console.error('localStorage 삭제 실패:', err);
+  }
+};
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [identity, setIdentity] = useState<Identity | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Check if user is already logged in
-    const accessToken = Cookies.get('accessToken') || Cookies.get('authToken');
-    if (accessToken) {
-      // In a real app, you would verify the token with the server
-      // For now, we'll just check if it exists and validate basic JWT structure
+    const storedIdentity = getStorageValue(STORAGE_KEYS.IDENTITY);
+    const storedProfile = getStorageValue(STORAGE_KEYS.PROFILE);
+    if (storedIdentity) {
       try {
-        // Basic JWT structure validation (header.payload.signature)
-        const tokenParts = accessToken.split('.');
-        if (
-          tokenParts.length === 3 ||
-          accessToken.startsWith('mock-jwt-token-')
-        ) {
+        const identityObj: Identity = JSON.parse(storedIdentity);
+        if (identityObj.token && identityObj.uuid) {
           setIsAuthenticated(true);
-          setUser({ name: '테스트 사용자', id: '1' });
+          setIdentity(identityObj);
+          if (storedProfile) {
+            setProfile(JSON.parse(storedProfile));
+          } else {
+            setProfile(null);
+          }
+        } else {
+          setIsAuthenticated(false);
+          setIdentity(null);
+          setProfile(null);
         }
-      } catch (error) {
-        console.error('Invalid token format:', error);
-        Cookies.remove('accessToken');
-        Cookies.remove('authToken');
+      } catch (err) {
+        console.error('Identity/Profile 파싱 실패:', err);
+        setIsAuthenticated(false);
+        setIdentity(null);
+        setProfile(null);
       }
+    } else {
+      setIsAuthenticated(false);
+      setIdentity(null);
+      setProfile(null);
     }
     setLoading(false);
   }, []);
 
-  const generateMockJWT = (userId: string, username: string) => {
-    // Mock JWT structure: header.payload.signature
-    const header = { alg: 'HS256', typ: 'JWT' };
-    const payload = {
-      sub: userId,
-      username: username,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 days
-    };
-
-    // Base64 encode (for demo purposes only - real JWT needs proper signing)
-    const encodedHeader = btoa(JSON.stringify(header));
-    const encodedPayload = btoa(JSON.stringify(payload));
-    const signature = btoa('mock-signature-' + Date.now());
-
-    return `${encodedHeader}.${encodedPayload}.${signature}`;
-  };
-
-  const login = async (username: string, password: string) => {
-    try {
-      // Mock login - in real app, this would be an API call
-      console.log('Attempting to log in with:', { username, password });
-
-      // Generate mock JWT token
-      const accessToken = generateMockJWT('1', username);
-
-      // Store token in cookie
-      Cookies.set('accessToken', accessToken, {
-        expires: 7, // 7 days
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-      });
-
-      // Remove old authToken if exists
-      Cookies.remove('authToken');
-
-      setIsAuthenticated(true);
-      setUser({ name: '테스트 사용자', id: '1' });
-
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: '로그인에 실패했습니다.' };
-    }
-  };
-
-  const signup = async (userData: {
-    username: string;
-    password: string;
-    name: string;
-    gender: string;
-    age: string;
-    phone: string;
-    address: string;
-    notes: string;
-  }) => {
-    try {
-      // Mock signup - in real app, this would be an API call
-      console.log('Attempting to sign up with:', userData);
-
-      // Generate mock JWT token
-      const accessToken = generateMockJWT('2', userData.username);
-
-      // Store token in cookie
-      Cookies.set('accessToken', accessToken, {
-        expires: 7, // 7 days
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-      });
-
-      // Remove old authToken if exists
-      Cookies.remove('authToken');
-
-      setIsAuthenticated(true);
-      setUser({ name: userData.name, id: '2' });
-
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: '회원가입에 실패했습니다.' };
-    }
-  };
-
   const logout = () => {
-    Cookies.remove('accessToken');
-    Cookies.remove('authToken');
+    removeStorageValue(STORAGE_KEYS.IDENTITY);
+    removeStorageValue(STORAGE_KEYS.PROFILE);
     setIsAuthenticated(false);
-    setUser(null);
+    setIdentity(null);
+    setProfile(null);
   };
 
   const value = {
     isAuthenticated,
-    user,
-    login,
-    signup,
+    profile,
+    identity,
     logout,
     loading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+// 로그인/회원가입 성공 시 호출
+export const setAuthData = (token: string, profile: UserProfile): void => {
+  const uuid = extractSubjectFromToken(token);
+  if (!uuid) {
+    console.error('토큰에서 UUID 추출 실패');
+    return;
+  }
+  const identityObj: Identity = { token, uuid };
+  setStorageValue(STORAGE_KEYS.IDENTITY, JSON.stringify(identityObj));
+  setStorageValue(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
 };

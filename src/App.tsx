@@ -8,6 +8,7 @@ import {
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import Dashboard from './pages/Dashboard';
 import MedicationPage from './pages/MedicationPage';
 import ExercisePage from './pages/ExercisePage';
@@ -31,6 +32,7 @@ const App: React.FC = () => {
                 <Route path="/" element={<Navigate to="/start" replace />} />
                 <Route path="/start" element={<HomePage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
                 <Route
                   path="/dashboard"
                   element={
