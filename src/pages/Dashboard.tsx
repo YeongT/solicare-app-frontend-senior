@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDashboard } from '../hooks/useDashboard';
 import { useTodayMeals } from '../hooks/useTodayMeals';
+import {
+  NotificationsRenderer,
+  TodayMealsList,
+} from '../components/DashboardComponents';
 import {
   CardButton,
   CardDescription,
@@ -15,55 +19,11 @@ import {
   HeaderButtons,
   HeaderWrapper,
   NotificationCard,
-  NotificationItem,
-  NotificationMessage,
-  NotificationScrollContainer,
-  NotificationTime,
-  NotificationTitle,
   WelcomeText,
 } from '../styles/pages/Dashboard.styles';
 
-const TodayMealsList: React.FC = () => {
-  const { getMealStatusDisplay } = useTodayMeals();
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '2px',
-        padding: '8px 0',
-      }}
-    >
-      {getMealStatusDisplay().map((meal) => (
-        <div
-          key={meal.timeSlot}
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '4px 0',
-            fontSize: '14px',
-          }}
-        >
-          <span style={{ fontWeight: '600', color: '#495057' }}>
-            {meal.timeSlot}:
-          </span>
-          <span
-            style={{
-              color: meal.hasRecord ? '#28a745' : '#6c757d',
-              fontSize: '13px',
-            }}
-          >
-            {meal.statusText}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
 const Dashboard: React.FC = () => {
+  // Get data and handlers from custom hooks
   const {
     profile,
     generateAllNotifications,
@@ -74,9 +34,26 @@ const Dashboard: React.FC = () => {
     getTodayMedicationStats,
   } = useDashboard();
 
+  const { getMealStatusDisplay } = useTodayMeals();
+
+  // State for responsive design
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  // Handle window resize for responsive design
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Get data for display
   const exerciseStats = getTodayExerciseStats();
   const medicationStats = getTodayMedicationStats();
   const allNotifications = generateAllNotifications();
+  const mealsList = getMealStatusDisplay();
 
   return (
     <DashboardWrapper>
@@ -91,23 +68,20 @@ const Dashboard: React.FC = () => {
       </HeaderWrapper>
 
       <DashboardBody>
+        {/* Notifications Section */}
         <NotificationCard>
           <CardTitle style={{ fontSize: '1.5rem', marginBottom: '16px' }}>
             📢 오늘의 알림
           </CardTitle>
-          <NotificationScrollContainer>
-            {allNotifications.map((notification) => (
-              <NotificationItem key={notification.id}>
-                <NotificationTitle>{notification.title}</NotificationTitle>
-                <NotificationMessage>
-                  {notification.message}
-                </NotificationMessage>
-                <NotificationTime>{notification.time}</NotificationTime>
-              </NotificationItem>
-            ))}
-          </NotificationScrollContainer>
+          <NotificationsRenderer
+            notifications={allNotifications}
+            isMobile={isMobile}
+          />
         </NotificationCard>
+
+        {/* Dashboard Cards Grid */}
         <GridContainer>
+          {/* Medication Card */}
           <DashboardCard>
             <CardTitle>💊 복용 현황</CardTitle>
             <CardValue color="#17a2b8">
@@ -120,13 +94,17 @@ const Dashboard: React.FC = () => {
               약물 관리하기
             </CardButton>
           </DashboardCard>
+
+          {/* Diet Card */}
           <DashboardCard>
             <CardTitle>🍽️ 오늘의 식단</CardTitle>
-            <TodayMealsList />
+            <TodayMealsList mealsList={mealsList} />
             <CardButton onClick={() => handleNavigateToPage('/diet')}>
               식단 관리하기
             </CardButton>
           </DashboardCard>
+
+          {/* Exercise Card */}
           <DashboardCard>
             <CardTitle>🏃‍♂️ 운동 기록</CardTitle>
             <CardValue color="#28a745">{exerciseStats.count}회</CardValue>
@@ -138,6 +116,7 @@ const Dashboard: React.FC = () => {
             </CardButton>
           </DashboardCard>
 
+          {/* Chat Card */}
           <DashboardCard>
             <CardTitle>💬 AI 상담</CardTitle>
             <CardValue color="#6f42c1">24/7</CardValue>

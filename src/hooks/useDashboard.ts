@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { mockMedications, mockNotifications } from '../data/mockData';
 
+// Type definitions
 export interface NotificationItemType {
   id: string;
   title: string;
@@ -31,33 +32,54 @@ export interface ExerciseRecord {
   type: string;
 }
 
+export interface MedicationStats {
+  total: number;
+  taken: number;
+  percentage: number;
+}
+
+export interface ExerciseStats {
+  count: number;
+  duration: number;
+}
+
+/**
+ * Custom hook for dashboard functionality
+ * Provides all business logic and data needed for the Dashboard
+ */
 export const useDashboard = () => {
   const navigate = useNavigate();
   const { isAuthenticated, profile, loading, logout } = useAuth();
 
+  // State management
   const [medications] = useState<Medication[]>(() => {
     const savedMedications = localStorage.getItem('medications');
     return savedMedications ? JSON.parse(savedMedications) : mockMedications;
   });
 
-  // 인증 확인
+  // Authentication check
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       navigate('/login');
     }
   }, [loading, isAuthenticated, navigate]);
 
-  // 모든 알림 생성
+  /**
+   * Generates notifications to display on the dashboard
+   * Combines medication reminders with general notifications
+   */
   const generateAllNotifications = (): NotificationItemType[] => {
     const now = new Date();
     const currentHour = now.getHours();
     const medicationNotifications: NotificationItemType[] = [];
 
+    // Generate medication notifications
     medications.forEach((med: Medication) => {
       if (med.timeSlots && med.timeSlots.length > 0) {
         med.timeSlots.forEach((timeSlot) => {
           const [hour] = timeSlot.split(':').map(Number);
 
+          // Overdue medication
           if (currentHour >= hour && !med.taken) {
             medicationNotifications.push({
               id: `med-${med.id}-${timeSlot}`,
@@ -66,7 +88,9 @@ export const useDashboard = () => {
               time: `${Math.abs(currentHour - hour)}시간 전`,
               type: 'medication-overdue',
             });
-          } else if (hour - currentHour <= 1 && hour - currentHour > 0) {
+          }
+          // Upcoming medication
+          else if (hour - currentHour <= 1 && hour - currentHour > 0) {
             medicationNotifications.push({
               id: `med-${med.id}-${timeSlot}`,
               title: `⏰ ${med.name} 복용 예정`,
@@ -79,6 +103,7 @@ export const useDashboard = () => {
       }
     });
 
+    // Get general notifications
     const generalNotifications: NotificationItemType[] = mockNotifications
       .filter((notification) => notification.type !== 'medication')
       .map((notification) => ({
@@ -89,27 +114,30 @@ export const useDashboard = () => {
         type: notification.type,
       }));
 
+    // Combine and limit the number of notifications
     return [...medicationNotifications, ...generalNotifications].slice(0, 5);
   };
 
-  // 페이지 네비게이션
+  /**
+   * Navigation handlers
+   */
   const handleNavigateToPage = (path: string) => {
     navigate(path);
   };
 
-  // 홈으로 이동
   const handleGoHome = () => {
     navigate('/');
   };
 
-  // 로그아웃
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  // 오늘의 운동 통계
-  const getTodayExerciseStats = () => {
+  /**
+   * Get today's exercise statistics
+   */
+  const getTodayExerciseStats = (): ExerciseStats => {
     const savedExercises = localStorage.getItem('exercises');
     if (!savedExercises) return { count: 0, duration: 0 };
 
@@ -131,8 +159,10 @@ export const useDashboard = () => {
     };
   };
 
-  // 오늘의 약물 복용 통계
-  const getTodayMedicationStats = () => {
+  /**
+   * Get today's medication statistics
+   */
+  const getTodayMedicationStats = (): MedicationStats => {
     const totalMedications = medications.length;
     const takenMedications = medications.filter(
       (med: Medication) => med.taken
@@ -149,13 +179,13 @@ export const useDashboard = () => {
   };
 
   return {
-    // 상태
+    // State
     isAuthenticated,
     profile,
     loading,
     medications,
 
-    // 함수
+    // Functions
     generateAllNotifications,
     handleNavigateToPage,
     handleGoHome,

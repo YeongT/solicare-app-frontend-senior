@@ -10,9 +10,10 @@ export const PageWrapper = styled.div`
 
 // 헤더
 export const Header = styled.header`
-  background: white;
-  padding: 1rem 0;
+  background: #f8f9fa;
+  padding: 2rem 0 1.5rem 0;
   border-bottom: 1px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 `;
 
 export const Nav = styled.nav`
@@ -24,18 +25,34 @@ export const Nav = styled.nav`
   align-items: center;
 
   @media (max-width: 768px) {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0;
     padding: 0 1rem;
   }
 `;
 
 export const Logo = styled.div`
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.8rem;
+  font-weight: 800;
   color: ${({ theme }) => theme.colors.primary};
   cursor: pointer;
+  text-align: left;
+  width: auto;
+  margin-bottom: 0;
+  letter-spacing: 1px;
 
   span {
     margin-right: 0.5rem;
+  }
+
+  @media (max-width: 768px) {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 24px;
+    font-size: 2.1rem;
+    font-weight: 900;
   }
 `;
 
@@ -43,6 +60,12 @@ export const UserSection = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
+  justify-content: flex-end;
+
+  @media (max-width: 768px) {
+    justify-content: center;
+    width: 100%;
+  }
 `;
 
 export const UserGreeting = styled.span`
@@ -52,16 +75,24 @@ export const UserGreeting = styled.span`
 
 export const AuthButtons = styled.div`
   display: flex;
-  gap: 0.5rem;
+  gap: 12px;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 16px;
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 export const AuthButton = styled.button<{ variant: 'primary' | 'secondary' }>`
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
+  padding: 0.85rem 2rem;
+  border-radius: 16px;
+  font-weight: 700;
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  font-size: 1.05rem;
 
   ${({ variant, theme }) =>
     variant === 'primary'

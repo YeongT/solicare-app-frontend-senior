@@ -93,14 +93,41 @@ const HomePage: React.FC = () => {
 
       <HeroSection>
         <HeroContent>
-          <HeroTitle>건강한 일상을 위한 스마트한 관리</HeroTitle>
-          <HeroDescription>
-            약, 식단, 운동, 건강상담까지 모든 건강 관리를 하나의 앱에서
-          </HeroDescription>
+          <HeroTitle>건강한 일상을 위한 솔루션</HeroTitle>
+          <HeroDescription>모든 건강 관리를 하나의 앱에서</HeroDescription>
           {isAuthenticated ? (
-            <CTAButton onClick={() => navigate('/dashboard')}>
-              대시보드 바로가기
-            </CTAButton>
+            <AuthButton
+              variant="primary"
+              onClick={() => navigate('/dashboard')}
+            >
+              대시보드로 이동
+            </AuthButton>
+          ) : window.innerWidth <= 600 ? (
+            <AuthButtons
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                width: '100%',
+                maxWidth: '280px',
+                marginTop: '20px',
+              }}
+            >
+              <AuthButton
+                variant="secondary"
+                onClick={() => navigate('/login')}
+                style={{ width: '100%' }}
+              >
+                로그인
+              </AuthButton>
+              <AuthButton
+                variant="primary"
+                onClick={() => navigate('/register')}
+                style={{ width: '100%' }}
+              >
+                회원가입
+              </AuthButton>
+            </AuthButtons>
           ) : (
             <CTAButton onClick={() => navigate('/register')}>
               시작하기

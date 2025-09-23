@@ -5,28 +5,55 @@ export const PageContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  height: 100vh;
   background: ${({ theme }) => theme.colors.background};
   padding: 32px 20px;
+  overflow-y: auto;
+
+  @media (max-width: 1140px) {
+    align-items: flex-start;
+    padding: 24px 16px;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  @media (max-width: 600px) {
+    padding: 12px 8px;
+    align-items: flex-start;
+    height: auto;
+    min-height: 100vh;
+  }
 `;
 
 export const Card = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1.4fr;
+  grid-template-columns: 1fr 1.2fr;
   background: ${({ theme }) => theme.colors.card};
-  border-radius: ${({ theme }) => theme.borderRadius.card};
+  border-radius: 12px;
   box-shadow: ${({ theme }) => theme.boxShadow.card};
-  max-width: 1300px;
+  max-width: 1100px;
   width: 100%;
-  height: 760px;
+  height: 790px;
   overflow: hidden;
 
-  @media (max-width: 1100px) {
-    max-width: 900px;
-  }
-  @media (max-width: 768px) {
+  @media (max-width: 1140px) {
+    width: 100%;
+    max-width: 650px;
     grid-template-columns: 1fr;
-    max-width: 420px;
+    min-height: auto;
     height: auto;
+    border-radius: 12px;
+    margin: 0 auto;
+    box-shadow: ${({ theme }) => theme.boxShadow.card};
+    padding: 0;
+  }
+
+  @media (max-width: 600px) {
+    max-width: 100vw;
+    border-radius: 16px;
+    box-shadow: none;
+    padding: 0 4px;
+    min-height: auto;
   }
 `;
 
@@ -36,13 +63,13 @@ export const LeftSection = styled.div`
     ${({ theme }) => theme.colors.primary} 0%,
     ${({ theme }) => theme.colors.secondary} 100%
   );
-  padding: 60px 48px;
+  padding: 40px 48px 32px 48px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   color: white;
   position: relative;
-  height: 100%; /* Card 높이에 맞춤 */
+  border-radius: 12px;
 
   &::before {
     content: '';
@@ -54,10 +81,10 @@ export const LeftSection = styled.div`
     background: url("data:image/svg+xml,%3csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3e%3cg fill='none' fill-rule='evenodd'%3e%3cg fill='%23ffffff' fill-opacity='0.05'%3e%3ccircle cx='30' cy='30' r='1'/%3e%3c/g%3e%3c/g%3e%3c/svg%3e");
   }
 
-  @media (max-width: 768px) {
-    padding: 40px 32px;
+  @media (max-width: 1140px) {
+    padding: 32px 24px 24px 24px;
+    border-radius: 12px;
     text-align: center;
-    height: auto;
   }
 `;
 
@@ -70,9 +97,14 @@ export const WelcomeTitle = styled.h1`
   position: relative;
   z-index: 1;
 
-  @media (max-width: 768px) {
+  @media (max-width: 1140px) {
     font-size: 2.25rem;
     margin-bottom: 16px;
+  }
+
+  @media (max-width: 600px) {
+    font-size: 1.35rem;
+    margin-bottom: 10px;
   }
 `;
 
@@ -86,9 +118,14 @@ export const WelcomeSubtitle = styled.p`
   position: relative;
   z-index: 1;
 
-  @media (max-width: 768px) {
+  @media (max-width: 1140px) {
     font-size: 1.125rem;
     margin-bottom: 32px;
+  }
+
+  @media (max-width: 600px) {
+    font-size: 0.95rem;
+    margin-bottom: 16px;
   }
 `;
 
@@ -98,6 +135,10 @@ export const FeatureList = styled.ul`
   margin: 0;
   position: relative;
   z-index: 1;
+
+  @media (max-width: 1140px) {
+    display: none;
+  }
 `;
 
 export const FeatureItem = styled.li`
@@ -128,7 +169,7 @@ export const FeatureItem = styled.li`
     flex-shrink: 0;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 1140px) {
     font-size: 1rem;
     margin-bottom: 16px;
   }
@@ -143,8 +184,16 @@ export const RightSection = styled.div`
   height: 100%; /* Card 높이에 맞춤 */
   overflow-y: auto;
 
-  @media (max-width: 800px) {
-    padding: 24px 16px;
+  @media (max-width: 1140px) {
+    padding: 24px 32px;
+    justify-content: flex-start;
+    height: auto;
+    min-height: auto;
+  }
+
+  @media (max-width: 600px) {
+    padding: 20px 16px;
+    justify-content: flex-start;
     height: auto;
   }
 `;
@@ -157,9 +206,14 @@ export const PageTitle = styled.h2`
   text-align: center;
   letter-spacing: -0.02em;
 
-  @media (max-width: 768px) {
+  @media (max-width: 1140px) {
     font-size: 1.75rem;
     margin-bottom: 10px;
+  }
+
+  @media (max-width: 600px) {
+    font-size: 1.15rem;
+    margin-bottom: 6px;
   }
 `;
 
@@ -170,9 +224,14 @@ export const PageSubtitle = styled.p`
   text-align: center;
   line-height: 1.5;
 
-  @media (max-width: 768px) {
+  @media (max-width: 1140px) {
     font-size: 1rem;
     margin-bottom: 32px;
+  }
+
+  @media (max-width: 600px) {
+    font-size: 0.85rem;
+    margin-bottom: 12px;
   }
 `;
 
@@ -212,8 +271,10 @@ export const FormGrid = styled.div`
   @media (max-width: 1100px) {
     grid-template-columns: 1fr 1fr;
   }
-  @media (max-width: 700px) {
+
+  @media (max-width: 600px) {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 `;
 
@@ -229,17 +290,6 @@ export const FullWidthGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 6px; /* gap 줄임 */
-`;
-
-export const HalfWidthGroup = styled.div`
-  grid-column: span 2;
-  display: flex;
-  flex-direction: column;
-  gap: 6px; /* gap 줄임 */
-
-  @media (max-width: 900px) {
-    grid-column: span 1;
-  }
 `;
 
 export const FormLabel = styled.label`
@@ -280,6 +330,8 @@ export const Select = styled.select`
   background: white;
   transition: all 0.2s ease;
   font-weight: 400;
+  line-height: 1.5;
+  height: auto;
 
   &:focus {
     outline: none;
@@ -391,6 +443,7 @@ export const CheckboxLabel = styled.label`
 
 export const Button = styled.button<{ variant?: 'secondary' }>`
   width: 100%;
+  min-width: 140px;
   padding: 16px 24px;
   background: ${({ variant, theme }) =>
     variant === 'secondary' ? 'transparent' : theme.colors.primary};
@@ -404,6 +457,7 @@ export const Button = styled.button<{ variant?: 'secondary' }>`
   transition: all 0.2s ease;
   margin-bottom: 16px;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 
   &:hover {
     background: ${({ variant, theme }) =>
@@ -421,27 +475,21 @@ export const Button = styled.button<{ variant?: 'secondary' }>`
     transform: none;
     box-shadow: none;
   }
+
+  @media (max-width: 600px) {
+    min-width: 80px;
+    font-size: 0.92rem;
+    padding: 10px 6px;
+    margin-bottom: 10px;
+  }
 `;
 
 export const ToggleText = styled.div`
   text-align: center;
-  margin: 24px 0 0 0;
-  font-size: 1.1rem;
-  color: ${({ theme }) => theme.colors.primary};
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    color: ${({ theme }) => theme.colors.secondary};
-    text-decoration: underline;
-  }
-
-  &:focus {
-    outline: 2px solid ${({ theme }) => theme.colors.primary};
-    outline-offset: 2px;
-    border-radius: 4px;
-  }
+  margin: 20px 0 16px 0;
+  font-size: 0.9375rem;
+  color: ${({ theme }) => theme.colors.textLight};
+  font-weight: 400;
 `;
 
 export const Divider = styled.div`
@@ -465,7 +513,7 @@ export const Divider = styled.div`
 
 export const FormSection = styled.div`
   width: 100%;
-  max-width: 540px;
+  max-width: 600px;
   display: flex;
   flex-direction: column;
   padding: 0 18px;
@@ -486,9 +534,15 @@ export const FormSection = styled.div`
     background: transparent;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 1140px) {
     max-width: 100%;
     padding: 0;
     max-height: none;
+  }
+
+  @media (max-width: 600px) {
+    max-width: 100vw;
+    padding: 0 4px;
+    margin: 0;
   }
 `;

@@ -9,22 +9,25 @@ export const DashboardWrapper = styled.div`
   font-family: 'Pretendard', 'Roboto', 'Noto Sans KR', sans-serif;
   display: block;
   margin: 0;
-  padding: 20px 0;
+  padding: 20px 24px;
   box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
 `;
 
 export const DashboardBody = styled.div`
   width: 100%;
   max-width: ${MAX_WIDTH}px;
   margin: 0 auto;
-  padding: 0 24px 32px 24px;
+  padding: 0;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 24px;
 
   @media (max-width: 768px) {
-    padding: 0 16px 24px 16px;
     gap: 20px;
   }
 `;
@@ -54,8 +57,9 @@ export const HeaderWrapper = styled.div`
   }
 
   @media (max-width: 768px) {
-    margin: 0 auto 20px auto;
+    margin: 0 0 20px 0;
     border-radius: 16px;
+    max-width: calc(100% - 0px);
   }
 `;
 
@@ -102,6 +106,12 @@ export const HeaderButtons = styled.div`
   display: flex;
   gap: 12px;
   align-items: center;
+
+  @media (max-width: 768px) {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
 `;
 
 export const HeaderButton = styled.button`
@@ -129,6 +139,12 @@ export const HeaderButton = styled.button`
       background: white;
       color: ${({ theme }) => theme.colors.error};
     }
+  }
+
+  @media (max-width: 768px) {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    min-width: 80px;
   }
 `;
 
@@ -310,4 +326,18 @@ export const GridContainer = styled.div`
     gap: 16px;
     margin-bottom: 24px;
   }
+`;
+
+// Add new styles for mobile notifications
+export const MobileNotificationList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-top: 16px;
+`;
+
+export const MobileNotificationItem = styled(NotificationItem)`
+  min-width: unset;
+  width: 100%;
 `;
