@@ -2,7 +2,9 @@ name: Deploy to lightsail instance
 
 on:
   push:
-    branches: [ master, deploy ] # deploy branch for test
+    branches: [ master ]
+    tags:
+      - "test-*"
 
 permissions:
   contents: read
@@ -12,16 +14,20 @@ permissions:
 jobs:
   build:
     runs-on: self-hosted
+    environment: 'aws-lightsail-solicare-instance'
     outputs:
       deployment_id: ${{ steps.deployment.outputs.deployment_id }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+
       - name: Enable Yarn
         run: corepack enable
+
       - name: Cache Yarn dependencies
         uses: actions/cache@v4
         with:
@@ -31,8 +37,10 @@ jobs:
           key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
             yarn-${{ runner.os }}-
+
       - name: Install dependencies
         run: yarn install
+
       - name: Create GitHub Deployment
         id: deployment
         uses: actions/github-script@v7
@@ -49,12 +57,14 @@ jobs:
               auto_merge: false
             });
             core.setOutput('deployment_id', deployment.data.id)
+
       - name: Build (yarn)
         shell: bash
         env:
           CI: ${{ vars.CI || 'false' }}
           REACT_APP_BASE_API_URL: ${{ vars.BASE_API_URL }}
         run: yarn build
+
       - name: Run tests if test files exist
         run: |
           if ls src/**/*.{spec,test}.{js,jsx,ts,tsx} 1> /dev/null 2>&1; then
@@ -62,6 +72,7 @@ jobs:
           else
             echo "No test files found, skipping tests."
           fi
+
       - name: Deployment Status Failure (Build Failed)
         if: failure() && steps.deployment.outputs.deployment_id != ''
         uses: actions/github-script@v7
@@ -78,14 +89,18 @@ jobs:
 
   deploy:
     runs-on: self-hosted
+    environment: 'aws-lightsail-solicare-instance'
     needs: build
     steps:
       - name: Ensure target directory exists
         run: sudo mkdir -p /usr/share/nginx/html/senior
+
       - name: Remove old files in target directory
         run: sudo rm -rf /usr/share/nginx/html/senior/*
+
       - name: Move build files to nginx directory
         run: sudo mv build/* /usr/share/nginx/html/senior/
+
       - name: Deployment Status Success
         if: success()
         uses: actions/github-script@v7
@@ -96,9 +111,10 @@ jobs:
               repo: context.repo.repo,
               deployment_id: ${{ needs.build.outputs.deployment_id }},
               state: 'success',
-              environment_url: 'https://care.solicare.kro.kr',
+              environment_url: '${{ vars.HOSTING_URL }}',
               log_url: `https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ github.job }}`
             })
+
       - name: Deployment Status Failure
         if: failure()
         uses: actions/github-script@v7

@@ -1,14 +1,14 @@
 import axios from 'axios';
 import {
   LoginRequest,
-  SignupRequest,
   LoginResponse,
+  SignupRequest,
   SignupResponse,
   UserProfile,
 } from '../types/apiTypes';
 
 const baseURL =
-  process.env.REACT_APP_API_URL || 'https://dev-api.solicare.kro.kr/api';
+  process.env.REACT_APP_BASE_API_URL || 'http://localhost:8080/api';
 const api = axios.create({ baseURL });
 
 // API 응답 타입 정의
