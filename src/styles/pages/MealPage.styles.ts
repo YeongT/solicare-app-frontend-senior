@@ -32,7 +32,7 @@ export const PageTitle = styled.h2`
   }
 `;
 
-export const AddMealForm = styled.div`
+export const AddMealForm = styled.form`
   background: ${({ theme }) => theme.colors.card};
   padding: 15px;
   border-radius: 12px;
@@ -126,83 +126,38 @@ export const AddButton = styled.button`
   }
 `;
 
-export const MealList = styled.div`
-  background: ${({ theme }) => theme.colors.card};
-  border-radius: 12px;
-  padding: 15px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-  @media (min-width: 768px) {
-    padding: 20px;
-  }
-`;
-
-export const MealItem = styled.div`
+export const MealListContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 15px 0;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-
-  @media (min-width: 768px) {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-  }
-
-  &:last-child {
-    border-bottom: none;
-  }
 `;
 
-export const MealInfo = styled.div`
-  flex: 1;
-  min-width: 0;
-`;
-
-export const MealName = styled.div`
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.text};
-  margin-bottom: 6px;
-  font-size: 16px;
-  line-height: 1.3;
-  word-wrap: break-word;
-
-  @media (min-width: 768px) {
-    margin-bottom: 4px;
-  }
-`;
-
-export const MealTime = styled.div`
-  color: #7f8c8d;
-  font-size: 14px;
-  line-height: 1.2;
-`;
-
-export const DeleteButton = styled.button`
-  background: #e74c3c;
-  color: white;
-  border: none;
+export const MealListItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 10px 16px;
-  border-radius: 6px;
-  cursor: pointer;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 16px;
+`;
+
+export const MealListTime = styled.span`
+  color: #888;
   font-size: 14px;
-  transition: background-color 0.2s;
-  align-self: flex-start;
-  white-space: nowrap;
+  margin-right: 8px;
+`;
 
-  @media (min-width: 768px) {
-    align-self: center;
-    padding: 8px 16px;
-  }
+export const MealListDesc = styled.span`
+  flex: 1;
+`;
 
-  &:hover {
-    background: #c0392b;
-  }
-  &:active {
-    transform: translateY(1px);
-  }
+export const MealDeleteButton = styled.button`
+  background: none;
+  border: none;
+  color: #e57373;
+  cursor: pointer;
+  font-size: 16px;
 `;
 
 export const EmptyMessage = styled.div`

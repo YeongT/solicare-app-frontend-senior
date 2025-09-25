@@ -2,6 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { mockMedications, mockNotifications } from '../data/mockData';
+import {
+  generateMealAlerts,
+  getEnglishTimeSlot,
+  mealIcons,
+  MealStatus,
+} from '../utils/mealUtils';
+import { useMeal } from './useMeal';
 
 // Type definitions
 export interface NotificationItemType {
@@ -50,12 +57,17 @@ export interface ExerciseStats {
 export const useDashboard = () => {
   const navigate = useNavigate();
   const { isAuthenticated, profile, loading, logout } = useAuth();
+  const { getTodayMealStatus } = useMeal();
 
   // State management
   const [medications] = useState<Medication[]>(() => {
     const savedMedications = localStorage.getItem('medications');
     return savedMedications ? JSON.parse(savedMedications) : mockMedications;
   });
+
+  const [mealStatus, setMealStatus] = useState<MealStatus[]>(() =>
+    getTodayMealStatus()
+  );
 
   // Authentication check
   useEffect(() => {
@@ -64,9 +76,17 @@ export const useDashboard = () => {
     }
   }, [loading, isAuthenticated, navigate]);
 
+  // Sync meal status when localStorage changes
+  useEffect(() => {
+    const syncMeals = () => setMealStatus(getTodayMealStatus());
+    window.addEventListener('storage', syncMeals);
+    setMealStatus(getTodayMealStatus());
+    return () => window.removeEventListener('storage', syncMeals);
+  }, [getTodayMealStatus]);
+
   /**
    * Generates notifications to display on the dashboard
-   * Combines medication reminders with general notifications
+   * Combines medication reminders with general notifications and meal alerts
    */
   const generateAllNotifications = (): NotificationItemType[] => {
     const now = new Date();
@@ -103,6 +123,9 @@ export const useDashboard = () => {
       }
     });
 
+    // Generate meal alerts using the utility function
+    const mealAlerts: NotificationItemType[] = generateMealAlerts(mealStatus);
+
     // Get general notifications
     const generalNotifications: NotificationItemType[] = mockNotifications
       .filter((notification) => notification.type !== 'medication')
@@ -115,7 +138,21 @@ export const useDashboard = () => {
       }));
 
     // Combine and limit the number of notifications
-    return [...medicationNotifications, ...generalNotifications].slice(0, 5);
+    return [
+      ...mealAlerts,
+      ...medicationNotifications,
+      ...generalNotifications,
+    ].slice(0, 5);
+  };
+
+  /**
+   * Get meal status with icons for rendering
+   */
+  const getMealStatusWithIcons = () => {
+    return mealStatus.map((m) => ({
+      ...m,
+      icon: mealIcons[getEnglishTimeSlot(m.type)] || '🍽️',
+    }));
   };
 
   /**
@@ -184,6 +221,7 @@ export const useDashboard = () => {
     profile,
     loading,
     medications,
+    mealStatus: getMealStatusWithIcons(),
 
     // Functions
     generateAllNotifications,

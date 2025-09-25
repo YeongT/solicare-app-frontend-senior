@@ -271,14 +271,17 @@ export const NotificationScrollContainer = styled.div`
 `;
 
 export const NotificationItem = styled.div`
-  min-width: 280px;
-  flex-shrink: 0;
-  padding: 16px;
-  background-color: ${({ theme }) => theme.colors.card};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: transform 0.2s ease-in-out;
+  background: ${({ theme }) => theme.colors.card};
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  max-width: 70%;
+  min-width: 320px;
+  flex: 0 0 auto;
+  word-break: break-word;
 
   &:hover {
     transform: translateY(-2px);
@@ -338,6 +341,5 @@ export const MobileNotificationList = styled.div`
 `;
 
 export const MobileNotificationItem = styled(NotificationItem)`
-  min-width: unset;
-  width: 100%;
+  max-width: 95vw;
 `;

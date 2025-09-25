@@ -13,7 +13,7 @@ import Dashboard from './pages/Dashboard';
 import MedicationPage from './pages/MedicationPage';
 import ExercisePage from './pages/ExercisePage';
 import ChatPage from './pages/ChatPage';
-import DietPage from './pages/DietPage';
+import MealPage from './pages/MealPage';
 import HomePage from './pages/HomePage';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from 'styled-components';
@@ -77,7 +77,7 @@ const App: React.FC = () => {
                   path="/diet"
                   element={
                     <ProtectedRoute>
-                      <DietPage />
+                      <MealPage />
                     </ProtectedRoute>
                   }
                 />

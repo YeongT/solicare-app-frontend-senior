@@ -71,3 +71,11 @@ export interface MedicationRecord {
   recordTime: string;
   status: 'taken' | 'missed';
 }
+
+export interface MealRecord {
+  id: string; // 고유 식별자
+  date: string; // YYYY-MM-DD
+  time: string; // HH:mm
+  type: '아침' | '점심' | '저녁' | '간식';
+  description: string;
+}

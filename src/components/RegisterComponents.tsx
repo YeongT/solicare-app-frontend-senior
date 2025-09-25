@@ -47,7 +47,7 @@ export const RegisterLeftSection: React.FC<{
             ✅ 약물 복용 알림 서비스
           </li>
           <li style={{ margin: '12px 0', fontSize: '16px', color: '#fff' }}>
-            ✅ 체계적인 운동 및 식단 관리
+            ✅ 체계적인 운동 및 식사 기록 관리
           </li>
           <li style={{ margin: '12px 0', fontSize: '16px', color: '#fff' }}>
             ✅ AI 기반 건강 상담

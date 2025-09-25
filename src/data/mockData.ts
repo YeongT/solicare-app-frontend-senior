@@ -78,59 +78,6 @@ export const mockExerciseData = {
   ],
 };
 
-interface Message {
-  id: number;
-  type: 'user' | 'ai';
-  message: string;
-  timestamp: string;
-}
-
-export const mockChatHistory: Message[] = [
-  {
-    id: 1,
-    type: 'user',
-    message: '오늘 약을 먹었는지 확인해주세요',
-    timestamp: '2024-01-15 10:30',
-  },
-  {
-    id: 2,
-    type: 'ai',
-    message:
-      '네, 확인해드리겠습니다. 오늘 아침 혈압약은 복용하셨고, 점심 당뇨약과 저녁 비타민은 아직 복용하지 않으셨습니다.',
-    timestamp: '2024-01-15 10:31',
-  },
-  {
-    id: 3,
-    type: 'user',
-    message: '운동은 얼마나 했나요?',
-    timestamp: '2024-01-15 10:32',
-  },
-  {
-    id: 4,
-    type: 'ai',
-    message:
-      '오늘은 3,240보를 걸으셨고, 2.1km를 이동하셨습니다. 총 25분간 운동하셨네요. 정말 좋습니다!',
-    timestamp: '2024-01-15 10:33',
-  },
-];
-
-export const mockDietData = {
-  today: {
-    consumedCalories: 420,
-    targetCalories: 1800,
-    mealsCompleted: 1,
-    totalMeals: 4,
-  },
-  nutrients: {
-    protein: 15,
-    carbs: 65,
-    fat: 8,
-    targetProtein: 120,
-    targetCarbs: 250,
-    targetFat: 60,
-  },
-};
-
 export const mockNotifications = [
   {
     id: 1,
@@ -145,13 +92,6 @@ export const mockNotifications = [
     message: '오늘 걸음 수가 목표에 가까워요!',
     time: '16:30',
     type: 'exercise',
-  },
-  {
-    id: 3,
-    title: '🍽️ 식단 알림',
-    message: '저녁 식사 시간이 다가왔어요',
-    time: '18:00',
-    type: 'diet',
   },
   {
     id: 4,

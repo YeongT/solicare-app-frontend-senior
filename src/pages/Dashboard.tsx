@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDashboard } from '../hooks/useDashboard';
-import { useTodayMeals } from '../hooks/useTodayMeals';
-import {
-  NotificationsRenderer,
-  TodayMealsList,
-} from '../components/DashboardComponents';
+import { NotificationsRenderer } from '../components/DashboardComponents';
 import {
   CardButton,
   CardDescription,
@@ -23,9 +19,9 @@ import {
 } from '../styles/pages/Dashboard.styles';
 
 const Dashboard: React.FC = () => {
-  // Get data and handlers from custom hooks
   const {
     profile,
+    mealStatus,
     generateAllNotifications,
     handleNavigateToPage,
     handleGoHome,
@@ -34,26 +30,20 @@ const Dashboard: React.FC = () => {
     getTodayMedicationStats,
   } = useDashboard();
 
-  const { getMealStatusDisplay } = useTodayMeals();
-
   // State for responsive design
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  // Handle window resize for responsive design
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Get data for display
   const exerciseStats = getTodayExerciseStats();
   const medicationStats = getTodayMedicationStats();
   const allNotifications = generateAllNotifications();
-  const mealsList = getMealStatusDisplay();
 
   return (
     <DashboardWrapper>
@@ -95,12 +85,63 @@ const Dashboard: React.FC = () => {
             </CardButton>
           </DashboardCard>
 
-          {/* Diet Card */}
+          {/* Meal Status Card */}
           <DashboardCard>
-            <CardTitle>🍽️ 오늘의 식단</CardTitle>
-            <TodayMealsList mealsList={mealsList} />
+            <CardTitle>🍽️ 오늘의 식사 기록 현황</CardTitle>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+                margin: '16px 0',
+              }}
+            >
+              {mealStatus.map((m) => (
+                <div
+                  key={m.type}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '8px 0',
+                  }}
+                >
+                  <span style={{ fontSize: 24 }}>{m.icon}</span>
+                  <span
+                    style={{
+                      fontWeight: 600,
+                      minWidth: 50,
+                      fontSize: '16px',
+                    }}
+                  >
+                    {m.type}
+                  </span>
+                  {m.recorded ? (
+                    <span
+                      style={{
+                        color: '#2ecc40',
+                        fontWeight: 500,
+                        fontSize: '14px',
+                      }}
+                    >
+                      기록됨 ({m.time})
+                    </span>
+                  ) : (
+                    <span
+                      style={{
+                        color: '#e57373',
+                        fontWeight: 500,
+                        fontSize: '14px',
+                      }}
+                    >
+                      미기록
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
             <CardButton onClick={() => handleNavigateToPage('/diet')}>
-              식단 관리하기
+              식사 기록 관리하기
             </CardButton>
           </DashboardCard>
 
