@@ -29,6 +29,10 @@ export const MedicationHeader = styled.div`
   padding: 24px 35px;
   border-radius: 16px;
   box-shadow: ${({ theme }) => theme.boxShadow.card};
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 `;
 
 export const PageTitle = styled.h2`
@@ -188,6 +192,11 @@ export const TopSummaryCard = styled.div`
   display: flex;
   align-items: flex-start;
   gap: 40px;
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
 `;
 
 export const SummarySection = styled.div`
@@ -542,6 +551,10 @@ export const DosageRow = styled.div`
   align-items: end;
   margin-bottom: 15px;
   justify-content: center;
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
 `;
 
 export const SimpleDosageInput = styled.div`
@@ -707,6 +720,10 @@ export const TimeButton = styled.button<{ isSelected: boolean }>`
   &:hover {
     border-color: ${({ theme }) => theme.colors.primary};
     background: ${(props) => (props.isSelected ? '#1746a0' : '#f8f9fa')};
+  }
+  @media (max-width: 768px) {
+    padding: 8px 10px;
+    font-size: 12px;
   }
 `;
 
@@ -994,6 +1011,10 @@ export const RecordAmountRow = styled.div`
       border-color: ${({ theme }) => theme.colors.primary};
       box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
     }
+  }
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
 `;
 

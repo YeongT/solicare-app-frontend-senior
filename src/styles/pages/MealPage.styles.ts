@@ -19,6 +19,10 @@ export const DietHeader = styled.div`
   padding: 24px 35px;
   border-radius: 16px;
   box-shadow: ${({ theme }) => theme.boxShadow.card};
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 `;
 
 export const PageTitle = styled.h2`
@@ -27,9 +31,9 @@ export const PageTitle = styled.h2`
   margin: 0;
   font-weight: 700;
 
-  @media (min-width: 768px) {
-    font-size: 32px;
-  }
+  // @media (min-width: 768px) {
+  //   font-size: 32px;
+  // }
 `;
 
 export const AddMealForm = styled.form`

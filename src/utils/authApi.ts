@@ -9,6 +9,7 @@ import {
 
 const baseURL =
   process.env.REACT_APP_BASE_API_URL || 'http://localhost:8080/api';
+console.log(process.env.REACT_APP_BASE_API_URL);
 const api = axios.create({ baseURL });
 
 // API 응답 타입 정의
@@ -74,6 +75,7 @@ export async function loginApi(data: LoginRequest): Promise<AuthApiResponse> {
 // 회원가입 API
 export async function signupApi(data: SignupRequest): Promise<AuthApiResponse> {
   try {
+    console.log(data);
     const res = await api.post<SignupResponse>('/senior/join', data);
 
     if (res.data.isSuccess && res.data.body) {

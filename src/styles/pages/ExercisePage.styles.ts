@@ -27,6 +27,10 @@ export const ExerciseHeader = styled.div`
   padding: 24px 35px;
   border-radius: 16px;
   box-shadow: ${({ theme }) => theme.boxShadow.card};
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 `;
 
 export const PageTitle = styled.h2`
@@ -57,6 +61,10 @@ export const SummaryGrid = styled.div`
   @media (max-width: 1200px) {
     grid-template-columns: repeat(2, 1fr);
     gap: 24px;
+  }
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
 `;
 
@@ -129,6 +137,19 @@ export const TipCard = styled.div`
   padding: 30px;
   box-shadow: ${({ theme }) => theme.boxShadow.card};
   margin-top: 30px;
+`;
+
+export const CompareRow = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 60px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 24px;
+    align-items: stretch;
+  }
 `;
 
 export const TipItem = styled.p`

@@ -33,6 +33,7 @@ import {
   StepsPercentage,
   GoalProgressCard,
   GoalProgressBarWithText,
+  CompareRow,
 } from '../styles/pages/ExercisePage.styles';
 import { NavButton } from '../components/StyledComponents';
 
@@ -110,14 +111,7 @@ const ExercisePage: React.FC = () => {
               >
                 🏆 이웃과 활동량 비교
               </SectionTitle>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  gap: '60px',
-                }}
-              >
+              <CompareRow>
                 <div style={{ textAlign: 'center' }}>
                   <div
                     style={{
@@ -181,7 +175,7 @@ const ExercisePage: React.FC = () => {
                     {today.steps.toLocaleString()}보
                   </div>
                 </div>
-              </div>
+              </CompareRow>
               <div
                 style={{
                   marginTop: '24px',

@@ -21,6 +21,11 @@ export const ChatHeader = styled.div`
   padding: 24px 35px;
   border-radius: 16px;
   box-shadow: ${({ theme }) => theme.boxShadow.card};
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
 `;
 
 export const PageTitle = styled.h2`
@@ -95,7 +100,7 @@ export const InputArea = styled.div`
 `;
 
 export const ChatInput = styled.input`
-  flex: 1;
+  width: calc(100% - 135px);
   padding: 12px 15px;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
@@ -143,8 +148,8 @@ export const VoiceButton = styled.button<{ $isListening?: boolean }>`
   padding: 12px;
   border: none;
   border-radius: 50%;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   cursor: pointer;
   background-color: ${(props) => (props.$isListening ? '#ff4757' : '#87ceeb')};
   color: white;
