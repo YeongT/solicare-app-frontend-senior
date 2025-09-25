@@ -278,7 +278,7 @@ export const NotificationItem = styled.div`
   margin-bottom: 16px;
   display: flex;
   flex-direction: column;
-  max-width: 70%;
+  max-width: 24.5%;
   min-width: 320px;
   flex: 0 0 auto;
   word-break: break-word;

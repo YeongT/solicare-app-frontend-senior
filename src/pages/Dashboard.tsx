@@ -92,8 +92,8 @@ const Dashboard: React.FC = () => {
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 16,
-                margin: '16px 0',
+                gap: 8,
+                margin: '16px 0 32px 0',
               }}
             >
               {mealStatus.map((m) => (
@@ -103,7 +103,7 @@ const Dashboard: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 12,
-                    padding: '8px 0',
+                    padding: '0px 0',
                   }}
                 >
                   <span style={{ fontSize: 24 }}>{m.icon}</span>
