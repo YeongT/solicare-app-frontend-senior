@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { mockMedications } from '../data/mockData';
-import { NavButton, StatusBadge } from '../components/StyledComponents';
+import { NavButton } from '../components/StyledComponents';
 import {
-  BadgeContainer,
   ButtonSection,
   CancelButton,
   CardButtonGroup,
@@ -26,11 +24,11 @@ import {
   MedicationButton,
   MedicationCard,
   MedicationCardHeader,
+  MedicationCardWrapper,
   MedicationContent,
   MedicationGrid,
   MedicationHeader,
   MedicationName,
-  MedicationNote,
   MedicationProgress,
   MedicationProgressBar,
   MedicationSectionTitle,
@@ -39,6 +37,7 @@ import {
   MemoButton,
   MemoSection,
   MemoTextarea,
+  MemoTooltip,
   ModalContent,
   ModalHeader,
   ModalOverlay,
@@ -81,539 +80,102 @@ import {
   WeeklyScheduleSection,
 } from '../styles/pages/MedicationPage.styles';
 
-// 기존 인터페이스/로직 그대로 유지
-interface Medication {
-  id: number;
-  name: string;
-  description: string;
-  dailyDosage: string;
-  memo: string;
-  daysOfWeek: string[];
-  timeSlots: string[];
-  taken: boolean;
-  time?: string;
-  dosage?: string;
-  note?: string;
-}
-
-interface MedicationRecord {
-  id: string;
-  medicationId: number;
-  recordTime: string;
-  status: 'taken' | 'skipped';
-  amount?: number;
-  unit?: string;
-  memo?: string;
-}
-
-interface RecordForm {
-  recordTime: string;
-  status: 'taken' | 'skipped';
-  amount: number;
-  unit: string;
-  memo: string;
-}
+import { useMedication } from '../hooks/useMedication';
+import { DOSE_DATE, DOSE_METHOD, DOSE_RECORD_STATUS, DOSE_TIME, DOSE_UNIT, Medication, MedicationRecord } from '../types/apiTypes';
 
 const MedicationPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const [medications, setMedications] = useState(() => {
-    const savedMedications = localStorage.getItem('medications');
-    return savedMedications ? JSON.parse(savedMedications) : mockMedications;
-  });
+  // useMedication에서 가져온 상태와 함수들
+  const {
+    sortedMedications,
+    isMedicationModalOpen,
+    isRecordInputModalOpen,
+    isRecordListModalOpen,
+    showMemo,
+    showRecordMemo,
+    selectedMedicationForRecord,
+    selectedMedicationForList,
+    newMedication,
+    newMedicineRecord,
+    dosageInputType,
+    recordTime,
+    notification,
+    takenCount,
+    totalCount,
+    setNewMedication,
+    setNewMedicineRecord,
+    setDosageInputType,
+    setRecordTime,
+    setShowMemo,
+    setShowRecordMemo,
+    openModal,
+    closeModal,
+    openRecordInputModal,
+    closeRecordModal,
+    openRecordListModal,
+    closeRecordListModal,
+    handleDayOfWeekChange,
+    toggleAllDays,
+    handleTimeSlotChange,
+    setMorningEvening,
+    setMorningLunchDinner,
+    addMedication,
+    resetForm: resetMedicationModal,
+    saveRecord,
+    deleteMedication,
+    getCurrentDate,
+    getStatusMessage,
+    isMedicationTakenToday,
+    getMedicationsForDay,
+    getDayMedicationStatus,
+    formatTimeSlots,
+    formatDaySlots,
+  } = useMedication();
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // 상수 정의
+  const weekDays = Object.values(DOSE_DATE);
+  const unitOptions = Object.values(DOSE_UNIT);
+  const timeSlotOptions = Object.values(DOSE_TIME);
 
-  const [notification, setNotification] = useState<{
-    isOpen: boolean;
-    type: 'success' | 'error';
-    title: string;
-    message: string;
-  }>({
-    isOpen: false,
-    type: 'success',
-    title: '',
-    message: '',
-  });
-
-  const showNotification = (
-    type: 'success' | 'error',
-    title: string,
-    message: string
-  ) => {
-    setNotification({ isOpen: true, type, title, message });
-    setTimeout(() => {
-      setNotification((prev) => ({ ...prev, isOpen: false }));
-    }, 2500);
-  };
-
-  React.useEffect(() => {
-    localStorage.setItem('medications', JSON.stringify(medications));
-  }, [medications]);
-
-  const [showMemo, setShowMemo] = useState(false);
-
-  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
-  const [selectedMedicationForRecord, setSelectedMedicationForRecord] =
-    useState<Medication | null>(null);
-  const [medicationRecords, setMedicationRecords] = useState<
-    MedicationRecord[]
-  >([]);
-  const [recordForm, setRecordForm] = useState<RecordForm>({
-    recordTime: new Date().toISOString().slice(0, 16),
-    status: 'taken',
-    amount: 1,
-    unit: '정',
-    memo: '',
-  });
-
-  const [showRecordMemo, setShowRecordMemo] = useState(false);
-
-  const getCurrentDate = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const getCurrentTime = () => {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${hours}:${minutes}`;
-  };
-
-  const [recordTime, setRecordTime] = useState(getCurrentTime());
-
-  React.useEffect(() => {
-    if (isModalOpen || isRecordModalOpen) {
-      document.body.style.overflow = 'hidden !important';
-      document.body.style.position = 'fixed';
-      document.body.style.top = '0';
-      document.body.style.left = '0';
-      document.body.style.width = '100%';
-      document.body.style.height = '100vh';
-      document.documentElement.style.overflow = 'hidden !important';
-      document.documentElement.style.height = '100vh';
-    } else {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.width = '';
-      document.body.style.height = '';
-      document.documentElement.style.overflow = '';
-      document.documentElement.style.height = '';
-    }
-
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.width = '';
-      document.body.style.height = '';
-      document.documentElement.style.overflow = '';
-      document.documentElement.style.height = '';
-    };
-  }, [isModalOpen, isRecordModalOpen]);
-
-  React.useEffect(() => {
-    const savedRecords = localStorage.getItem('medicationRecords');
-    if (savedRecords) {
-      setMedicationRecords(JSON.parse(savedRecords));
-    }
-  }, []);
-
-  React.useEffect(() => {
-    localStorage.setItem(
-      'medicationRecords',
-      JSON.stringify(medicationRecords)
-    );
-  }, [medicationRecords]);
-
-  const [newMedication, setNewMedication] = useState({
-    name: '',
-    description: '',
-    dailyDosage: '',
-    memo: '',
-    daysOfWeek: [] as string[],
-    timeSlots: [] as string[],
-  });
-
-  const [dosageInputType, setDosageInputType] = useState<'detailed' | 'simple'>(
-    'detailed'
-  );
-  const [dosageDetails, setDosageDetails] = useState({
-    amountPerDose: '',
-    amountUnit: '정',
-    timesPerDay: '',
-    totalAmount: '',
-    totalUnit: '정',
-  });
-
-  const unitOptions = ['정', '개', 'mL', '회', '배', '포', '캡슐', '방울'];
-
-  const weekDays = ['월', '화', '수', '목', '금', '토', '일'];
-  const timeSlotOptions = [
-    '아침 (06:00-09:00)',
-    '점심 (11:00-14:00)',
-    '저녁 (17:00-20:00)',
-    '취침 전 (21:00-23:00)',
-  ];
-
-  const handleDayOfWeekChange = (day: string) => {
-    setNewMedication((prev) => ({
-      ...prev,
-      daysOfWeek: prev.daysOfWeek.includes(day)
-        ? prev.daysOfWeek.filter((d) => d !== day)
-        : [...prev.daysOfWeek, day],
-    }));
-  };
-
-  const toggleAllDays = () => {
-    const allDays = ['월', '화', '수', '목', '금', '토', '일'];
-    const isAllSelected = allDays.every((day) =>
-      newMedication.daysOfWeek.includes(day)
-    );
-    setNewMedication((prev) => ({
-      ...prev,
-      daysOfWeek: isAllSelected ? [] : allDays,
-    }));
-  };
-
-  const handleTimeSlotChange = (timeSlot: string) => {
-    setNewMedication((prev) => ({
-      ...prev,
-      timeSlots: prev.timeSlots.includes(timeSlot)
-        ? prev.timeSlots.filter((t) => t !== timeSlot)
-        : [...prev.timeSlots, timeSlot],
-    }));
-  };
-
-  const setMorningEvening = () => {
-    setNewMedication((prev) => ({
-      ...prev,
-      timeSlots: ['아침 (06:00-09:00)', '저녁 (17:00-20:00)'],
-    }));
-  };
-
-  const setMorningLunchDinner = () => {
-    setNewMedication((prev) => ({
-      ...prev,
-      timeSlots: [
-        '아침 (06:00-09:00)',
-        '점심 (11:00-14:00)',
-        '저녁 (17:00-20:00)',
-      ],
-    }));
-  };
-
-  const setAllTimes = () => {
-    setNewMedication((prev) => ({ ...prev, timeSlots: [...timeSlotOptions] }));
-  };
-
-  const generateDosageString = (): string => {
-    if (dosageInputType === 'detailed') {
-      const { amountPerDose, amountUnit, timesPerDay } = dosageDetails;
-      if (amountPerDose && timesPerDay && amountUnit) {
-        return `1회 ${amountPerDose}${amountUnit} × ${timesPerDay}회`;
-      }
-    } else {
-      const { totalAmount, totalUnit } = dosageDetails;
-      if (totalAmount && totalUnit) {
-        return `총 ${totalAmount}${totalUnit}`;
-      }
-    }
-    return '';
-  };
-
-  const validateForm = (): { isValid: boolean; errorMessage: string } => {
-    if (!newMedication.name.trim())
-      return { isValid: false, errorMessage: '약 이름을 입력해주세요.' };
-    if (!newMedication.description.trim())
-      return { isValid: false, errorMessage: '약 설명을 입력해주세요.' };
-    if (!generateDosageString())
-      return {
-        isValid: false,
-        errorMessage: '복용량 정보를 모두 입력해주세요.',
-      };
-    if (newMedication.daysOfWeek.length === 0)
-      return { isValid: false, errorMessage: '복용할 요일을 선택해주세요.' };
-    if (newMedication.timeSlots.length === 0)
-      return { isValid: false, errorMessage: '복용할 시간대를 선택해주세요.' };
-    return { isValid: true, errorMessage: '' };
-  };
-
-  const addMedication = () => {
-    const validation = validateForm();
-    if (validation.isValid) {
-      const finalDosage = generateDosageString();
-      const newMed = {
-        id: Date.now(),
-        name: newMedication.name,
-        description: newMedication.description,
-        dailyDosage: finalDosage,
-        memo: newMedication.memo,
-        daysOfWeek: newMedication.daysOfWeek,
-        timeSlots: newMedication.timeSlots,
-        taken: false,
-        time: newMedication.timeSlots[0]?.includes('아침')
-          ? '08:00'
-          : newMedication.timeSlots[0]?.includes('점심')
-            ? '12:00'
-            : newMedication.timeSlots[0]?.includes('저녁')
-              ? '18:00'
-              : '21:00',
-        dosage: finalDosage,
-        note: newMedication.memo,
-      };
-      setMedications([...medications, newMed]);
-      resetForm();
-      closeModal();
-      showNotification(
-        'success',
-        '약 추가 완료!',
-        `${newMedication.name}이(가) 성공적으로 추가되었습니다.`
-      );
-    } else {
-      showNotification('error', '입력 오류', validation.errorMessage);
-    }
-  };
-
-  const resetForm = () => {
-    setNewMedication({
-      name: '',
-      description: '',
-      dailyDosage: '',
-      memo: '',
-      daysOfWeek: [],
-      timeSlots: [],
-    });
-    setDosageDetails({
-      amountPerDose: '',
-      amountUnit: '정',
-      timesPerDay: '',
-      totalAmount: '',
-      totalUnit: '정',
-    });
-    setDosageInputType('detailed');
-  };
-
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => {
-    setIsModalOpen(false);
-    resetForm();
-  };
-
-  const openRecordModal = (medication: Medication) => {
-    setSelectedMedicationForRecord(medication);
-    setRecordForm({
-      recordTime: new Date().toISOString().slice(0, 16),
-      status: 'taken',
-      amount: 1,
-      unit: '정',
-      memo: '',
-    });
-    setRecordTime(getCurrentTime());
-    setShowRecordMemo(false);
-    setIsRecordModalOpen(true);
-  };
-
-  const closeRecordModal = () => {
-    setIsRecordModalOpen(false);
-    setSelectedMedicationForRecord(null);
-  };
-
-  const saveRecord = () => {
-    if (!selectedMedicationForRecord) return;
-    const currentDate = getCurrentDate();
-    const combinedDateTime = `${currentDate}T${recordTime}:00`;
-    const newRecord: MedicationRecord = {
-      id: Date.now().toString(),
-      medicationId: selectedMedicationForRecord.id,
-      recordTime: combinedDateTime,
-      status: recordForm.status,
-      amount: recordForm.status === 'taken' ? recordForm.amount : undefined,
-      unit: recordForm.status === 'taken' ? recordForm.unit : undefined,
-      memo: recordForm.memo || undefined,
-    };
-    setMedicationRecords((prev) => [...prev, newRecord]);
-    setMedications((prevMeds: Medication[]) =>
-      prevMeds.map((med: Medication) =>
-        med.id === selectedMedicationForRecord.id
-          ? { ...med, taken: recordForm.status === 'taken' }
-          : med
-      )
-    );
-    closeRecordModal();
-    setTimeout(() => {
-      setNotification({
-        isOpen: true,
-        type: 'success',
-        title: '복용 기록이 저장되었습니다!',
-        message: `${selectedMedicationForRecord.name}의 ${recordForm.status === 'taken' ? '복용' : '건너뜀'} 기록이 추가되었습니다.`,
-      });
-      setTimeout(() => {
-        setNotification((prev) => ({ ...prev, isOpen: false }));
-      }, 2000);
-    }, 150);
-  };
-
-  const getStatusMessage = (): string => {
-    const today = new Date().toLocaleDateString('ko-KR', { weekday: 'long' });
-    const dayMapping: { [key: string]: string } = {
-      월요일: '월',
-      화요일: '화',
-      수요일: '수',
-      목요일: '목',
-      금요일: '금',
-      토요일: '토',
-      일요일: '일',
-    };
-    const todayShort = dayMapping[today];
-    const timeSlots = ['아침', '점심', '저녁', '취침전'];
-    const statusByTimeSlot: string[] = [];
-    timeSlots.forEach((timeSlot) => {
-      const medsInTimeSlot = medications.filter(
-        (med: Medication) =>
-          med.timeSlots.some((slot) => slot.includes(timeSlot)) &&
-          med.daysOfWeek.includes(todayShort)
-      );
-      if (medsInTimeSlot.length === 0) return;
-      const recordedMeds = medicationRecords.filter((record) => {
-        const recordDate = new Date(record.recordTime);
-        const today = new Date();
-        const isToday = recordDate.toDateString() === today.toDateString();
-        if (!isToday) return false;
-        const recordHour = recordDate.getHours();
-        let isInTimeSlot = false;
-        if (timeSlot === '아침' && recordHour >= 6 && recordHour < 12)
-          isInTimeSlot = true;
-        else if (timeSlot === '점심' && recordHour >= 12 && recordHour < 17)
-          isInTimeSlot = true;
-        else if (timeSlot === '저녁' && recordHour >= 17 && recordHour < 21)
-          isInTimeSlot = true;
-        else if (timeSlot === '취침전' && (recordHour >= 21 || recordHour < 6))
-          isInTimeSlot = true;
-        return (
-          isInTimeSlot &&
-          medsInTimeSlot.some(
-            (med: Medication) => med.id === record.medicationId
-          )
-        );
-      });
-      if (recordedMeds.length > 0) {
-        const lastRecord = recordedMeds[recordedMeds.length - 1];
-        const recordTime = new Date(lastRecord.recordTime);
-        const timeString = recordTime.toLocaleTimeString('ko-KR', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        });
-        statusByTimeSlot.push(`${timeSlot}: ${timeString}에 기록됨`);
-      } else {
-        statusByTimeSlot.push(`${timeSlot}: 기록되지 않음`);
-      }
-    });
-    return statusByTimeSlot.length > 0
-      ? statusByTimeSlot.join(' | ')
-      : '오늘 복용할 약이 없습니다.';
-  };
-
-  const getTodayMedications = (): Medication[] => {
-    return medications.filter((med: Medication) => {
-      if (med.daysOfWeek && med.daysOfWeek.length > 0) {
-        const today = new Date();
-        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-        const todayName = dayNames[today.getDay()];
-        return med.daysOfWeek.includes(todayName);
-      }
-      return false;
-    });
-  };
-
-  const deleteMedication = (id: number) => {
-    setMedications(medications.filter((med: Medication) => med.id !== id));
-  };
-
-  const extractTimeSlotNames = (timeSlots: string[]): string => {
-    return timeSlots
-      .map((slot) => {
-        const match = slot.match(/^([가-힣]+)/);
-        return match ? match[1] : slot;
-      })
-      .join(', ');
-  };
-
-  const isMedicationTakenToday = (medicationId: number): boolean => {
-    const today = new Date().toDateString();
-    const todayRecords = medicationRecords.filter((record) => {
-      const recordDate = new Date(record.recordTime);
-      return (
-        recordDate.toDateString() === today &&
-        record.medicationId === medicationId &&
-        record.status === 'taken'
-      );
-    });
-    return todayRecords.length > 0;
-  };
-
-  const todayMedications = getTodayMedications();
-  const takenCount = todayMedications.filter((med: Medication) =>
-    isMedicationTakenToday(med.id)
-  ).length;
-  const totalCount = todayMedications.length;
-
+  // 헬퍼 함수들
   const getTimeStatus = (time: string) => {
     const now = new Date();
     const [hours, minutes] = time.split(':').map(Number);
-    const medTime = new Date();
-    medTime.setHours(hours, minutes, 0, 0);
-    const diff = now.getTime() - medTime.getTime();
-    const diffHours = diff / (1000 * 60 * 60);
-    if (diffHours < 0) return 'upcoming';
-    if (diffHours < 1) return 'current';
-    return 'overdue';
+    const medicationTime = new Date(now);
+    medicationTime.setHours(hours, minutes, 0, 0);
+
+    return now > medicationTime ? 'overdue' : 'upcoming';
   };
 
-  const getMedicationsForDay = (dayIndex: number) => {
-    const dayNames = ['월', '화', '수', '목', '금', '토', '일'];
-    const targetDay = dayNames[dayIndex];
-    return medications.filter(
-      (med: Medication) => med.daysOfWeek && med.daysOfWeek.includes(targetDay)
-    );
-  };
+  React.useEffect(() => {
+    const modalOpen =
+      isMedicationModalOpen || isRecordInputModalOpen || isRecordListModalOpen;
 
-  const getDayMedicationStatus = (dayIndex: number) => {
-    const dayMedications = getMedicationsForDay(dayIndex);
-    const isToday =
-      dayIndex === new Date().getDay() - 1 ||
-      (new Date().getDay() === 0 && dayIndex === 6);
-    if (!isToday || dayMedications.length === 0) return 'neutral';
-    const today = new Date().toDateString();
-    const todayRecords = medicationRecords.filter((record) => {
-      const recordDate = new Date(record.recordTime);
-      return recordDate.toDateString() === today && record.status === 'taken';
-    });
-    const recordedMedicationIds = todayRecords.map(
-      (record) => record.medicationId
-    );
-    const takenMeds = dayMedications.filter((med: Medication) =>
-      recordedMedicationIds.includes(med.id)
-    ).length;
-    const totalMeds = dayMedications.length;
-    if (takenMeds === 0) return 'not-taken';
-    if (takenMeds === totalMeds) return 'all-taken';
-    return 'partial-taken';
+    document.body.style.overflow = modalOpen ? 'hidden' : '';
+    document.documentElement.style.overflow = modalOpen ? 'hidden' : '';
+
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [isMedicationModalOpen, isRecordInputModalOpen, isRecordListModalOpen]);
+
+  const timeSlotOptionsToText = {
+    [DOSE_TIME.morning]: '아침\n(06:00-08:00)',
+    [DOSE_TIME.lunch]: '점심\n(11:00-13:00)',
+    [DOSE_TIME.dinner]: '저녁\n(17:00-19:00)',
+    [DOSE_TIME.night]: '취침 전\n(21:00-23:00)',
+    [DOSE_TIME.any]: '아무때나',
   };
 
   return (
-    <MedicationWrapper modalOpen={isModalOpen || isRecordModalOpen}>
+    <MedicationWrapper
+      modalOpen={isMedicationModalOpen || isRecordInputModalOpen}
+    >
       <MedicationHeader>
         <PageTitle>💊 약물 복용 관리</PageTitle>
-        <div>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <NavButton onClick={() => navigate('/dashboard')}>
             대시보드 메인
           </NavButton>
@@ -641,7 +203,7 @@ const MedicationPage: React.FC = () => {
             </SummaryValue>
             <MedicationProgress>
               <MedicationProgressBar
-                progress={(takenCount / totalCount) * 100}
+                progress={totalCount > 0 ? (takenCount / totalCount) * 100 : 0}
               />
             </MedicationProgress>
             <div
@@ -691,8 +253,9 @@ const MedicationPage: React.FC = () => {
                 const isToday =
                   index === new Date().getDay() - 1 ||
                   (new Date().getDay() === 0 && index === 6);
-                const dayMedications = getMedicationsForDay(index);
-                const dayStatus = getDayMedicationStatus(index);
+                const dayEnum = Object.values(DOSE_DATE)[index];
+                const dayMedications = getMedicationsForDay(dayEnum);
+                const dayStatus = getDayMedicationStatus(dayEnum);
                 let backgroundColor = '#f8f9fa';
                 let borderColor = '#e9ecef';
                 if (isToday) {
@@ -752,7 +315,7 @@ const MedicationPage: React.FC = () => {
                             let medBackground = '#e0e0e0';
                             if (isToday) {
                               medColor = 'white';
-                              medBackground = isMedicationTakenToday(med.id)
+                              medBackground = isMedicationTakenToday(med)
                                 ? '#4caf50'
                                 : '#f44336';
                             }
@@ -796,105 +359,187 @@ const MedicationPage: React.FC = () => {
         </TopSummaryCard>
 
         <MedicationGrid>
-          {medications.map((medication: Medication) => {
-            const timeStatus = getTimeStatus(medication.time || '08:00');
-            const med = medication as Medication;
+          {sortedMedications.map((medication: Medication) => {
+            // 오늘 복용해야 하는 약인지 판별
+            const today = new Date();
+            const allDays: DOSE_DATE[] = Object.values(DOSE_DATE);
+            const todayIndex = today.getDay();
+            const todayName = allDays[todayIndex];
+            const isTodayMed = !medication.daySlots || medication.daySlots.length === 0 || medication.daySlots.includes(todayName);
+
+            // 오늘 복용한 양 계산
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const todayRecords = medication.records?.filter(
+              (rec) =>
+                rec.timestamp?.startsWith(todayStr) &&
+                rec.status === DOSE_RECORD_STATUS.taken
+            ) || [];
+            const takenAmount = todayRecords.reduce(
+              (sum, rec) => sum + (rec.amount || 0),
+              0
+            );
+            // 총 복용해야 할 양 계산
+            const totalNeeded = medication.doseMethod === DOSE_METHOD.daily
+              ? (medication.amountPerIntake || 1) * (medication.intakeTimesPerDay || 1)
+              : medication.doseAmount;
+
+            // 시간대 표시: total(간단하게)일 때만 '아무때나' 표시
+            let timeText = '';
+            if (medication.doseMethod !== DOSE_METHOD.daily) {
+              timeText = (!medication.timeSlots || medication.timeSlots.length === 0) ? '아무때나' : medication.timeSlots.join(', ');
+            } else {
+              timeText = (medication.timeSlots && medication.timeSlots.length > 0) ? medication.timeSlots.join(', ') : '';
+            }
+
+            // 복용 상태별 테두리 색상 결정 (오늘 복용해야 하는 약만 적용)
+            let borderColor = '#e9ecef';
+            if (isTodayMed) {
+              if (takenAmount === 0) {
+                borderColor = '#ff4d4f'; // 빨강(아예 안 먹음)
+              } else if (takenAmount < totalNeeded) {
+                borderColor = '#ffa500'; // 주황(일부 복용)
+              } else {
+                borderColor = '#28a745'; // 초록(다 먹음)
+              }
+            }
+
             return (
-              <MedicationCard
-                key={medication.id}
-                taken={isMedicationTakenToday(medication.id)}
-              >
-                <MedicationContent>
-                  <MedicationCardHeader>
-                    <MedicationName>{medication.name}</MedicationName>
-                    <CardButtonGroup>
-                      <CardEditButton
-                        onClick={() => {
-                          alert('준비중입니다.');
-                        }}
+              <MedicationCardWrapper key={medication.uuid}>
+                <MedicationCard
+                  taken={isMedicationTakenToday(medication)}
+                  shouldTakeToday={isTodayMed}
+                  style={isTodayMed ? { boxShadow: `0 0 0 2px ${borderColor}` } : {}}
+                >
+                  <MedicationContent>
+                    <MedicationCardHeader>
+                      <MedicationName>{medication.name}</MedicationName>
+                      <CardButtonGroup>
+                        <CardEditButton
+                          onClick={() => {
+                            alert('준비중입니다.');
+                          }}
+                        >
+                          수정
+                        </CardEditButton>
+                        <CardDeleteButton
+                          onClick={() => deleteMedication(medication.uuid)}
+                        >
+                          삭제
+                        </CardDeleteButton>
+                      </CardButtonGroup>
+                    </MedicationCardHeader>
+
+                    {medication.description && (
+                      <MedicationTimeDosage
+                        style={{ color: '#666', marginBottom: '8px' }}
                       >
-                        수정
-                      </CardEditButton>
-                      <CardDeleteButton
-                        onClick={() => deleteMedication(medication.id)}
-                      >
-                        삭제
-                      </CardDeleteButton>
-                    </CardButtonGroup>
-                  </MedicationCardHeader>
-
-                  {med.description && (
-                    <MedicationTimeDosage
-                      style={{ color: '#666', marginBottom: '8px' }}
-                    >
-                      📋 {med.description}
-                    </MedicationTimeDosage>
-                  )}
-
-                  <MedicationTimeDosage>
-                    💊 {med.dailyDosage || medication.dosage || '정보 없음'}
-                  </MedicationTimeDosage>
-
-                  {med.daysOfWeek && med.daysOfWeek.length > 0 && (
-                    <MedicationTimeDosage>
-                      📅 {med.daysOfWeek.join(', ')}요일
-                    </MedicationTimeDosage>
-                  )}
-
-                  {med.timeSlots && med.timeSlots.length > 0 && (
-                    <MedicationTimeDosage>
-                      ⏰ {extractTimeSlotNames(med.timeSlots)}
-                    </MedicationTimeDosage>
-                  )}
-
-                  {medication.time &&
-                    (!med.timeSlots || med.timeSlots.length === 0) && (
-                      <MedicationTimeDosage>
-                        🕒 {medication.time}
+                        📋 {medication.description}
                       </MedicationTimeDosage>
                     )}
 
-                  {(med.memo || medication.note) && (
-                    <MedicationNote>
-                      📝 {med.memo || medication.note}
-                    </MedicationNote>
-                  )}
-                </MedicationContent>
-                <div style={{ marginTop: 'auto' }}>
-                  <BadgeContainer>
-                    <StatusBadge
-                      status={
-                        isMedicationTakenToday(medication.id)
-                          ? 'taken'
-                          : 'not-taken'
+                    {/* 복용량 표시 방식 개선 */}
+                    <MedicationTimeDosage>
+                      💊 {medication.doseMethod === DOSE_METHOD.daily
+                        ? `1회 ${medication.amountPerIntake || 1}${medication.doseUnit} × ${medication.intakeTimesPerDay || 1}회`
+                        : `총 ${medication.doseAmount}${medication.doseUnit}`
                       }
-                    >
-                      {isMedicationTakenToday(medication.id)
-                        ? '복용완료'
-                        : '미복용'}
-                    </StatusBadge>
-                    {timeStatus === 'overdue' &&
-                      !isMedicationTakenToday(medication.id) && (
-                        <StatusBadge status="not-taken">시간 지남</StatusBadge>
-                      )}
-                  </BadgeContainer>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <MedicationButton
-                      taken={false}
-                      onClick={() => openRecordModal(medication)}
-                      style={{ fontSize: '14px', padding: '10px 14px' }}
-                    >
-                      기록하기
-                    </MedicationButton>
+                    </MedicationTimeDosage>
+
+                    {medication.daySlots && medication.daySlots.length > 0 && (
+                      <MedicationTimeDosage>
+                        📅 {formatDaySlots(medication.daySlots)}
+                      </MedicationTimeDosage>
+                    )}
+
+                    {/* 시간대 표시: total(간단하게)일 때만 '아무때나' */}
+                    {timeText && (
+                      <MedicationTimeDosage>
+                        ⏰ {timeText}
+                      </MedicationTimeDosage>
+                    )}
+                  </MedicationContent>
+                  <div style={{ marginTop: 'auto' }}>
+                    {/* 복용 상황 표시 */}
+                    <div style={{
+                      color: '#2196f3',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      marginBottom: '16px',
+                      textAlign: 'center'
+                    }}>
+                      {takenAmount} / {totalNeeded} {medication.doseUnit} 복용
+                    </div>
+                    {/* 버튼 순서 변경 및 크기 조정 (4:6 비율) */}
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => openRecordListModal(medication)}
+                        style={{
+                          flex: '4',
+                          background: 'white',
+                          color: '#2196f3',
+                          border: '2px solid #2196f3',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          padding: '10px 8px',
+                          cursor: 'pointer',
+                          fontWeight: '500',
+                          transition: 'all 0.2s ease',
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor = '#f3f9ff';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor = 'white';
+                        }}
+                      >
+                        기록보기
+                      </button>
+                      <MedicationButton
+                        taken={false}
+                        onClick={() => openRecordInputModal(medication)}
+                        style={{
+                          flex: '6',
+                          fontSize: '14px',
+                          padding: '10px 8px'
+                        }}
+                      >
+                        기록하기
+                      </MedicationButton>
+                    </div>
                   </div>
-                </div>
-              </MedicationCard>
+                  {/* 메모가 있을 때만 호버링 툴팁 표시 */}
+                  {medication.memo && (
+                    <MemoTooltip>
+                      📝 {medication.memo}
+                    </MemoTooltip>
+                  )}
+                </MedicationCard>
+              </MedicationCardWrapper>
             );
           })}
         </MedicationGrid>
       </ContentLayout>
 
-      {isModalOpen &&
+      {notification.isOpen &&
+        createPortal(
+          <NotificationOverlay isOpen={true}>
+            <NotificationDialog type={notification.type}>
+              <NotificationIcon type={notification.type}>
+                {notification.type === 'success' ? '✓' : '✗'}
+              </NotificationIcon>
+              <NotificationTitle type={notification.type}>
+                {notification.title}
+              </NotificationTitle>
+              <NotificationMessage>{notification.message}</NotificationMessage>
+              <NotificationProgress>
+                <NotificationProgressBar type={notification.type} />
+              </NotificationProgress>
+            </NotificationDialog>
+          </NotificationOverlay>,
+          document.body
+        )}
+
+      {isMedicationModalOpen &&
         createPortal(
           <ModalOverlay isOpen={true}>
             <ModalContent>
@@ -940,11 +585,15 @@ const MedicationPage: React.FC = () => {
                 <DosageHeader>
                   <label>복용량 설정</label>
                   <ToggleButton
-                    onClick={() =>
-                      setDosageInputType(
-                        dosageInputType === 'detailed' ? 'simple' : 'detailed'
-                      )
-                    }
+                    onClick={() => {
+                      const newInputType = dosageInputType === 'detailed' ? 'simple' : 'detailed';
+                      setDosageInputType(newInputType);
+                      // dosageInputType 변경 시 doseMethod도 함께 설정
+                      setNewMedication({
+                        ...newMedication,
+                        doseMethod: newInputType === 'simple' ? DOSE_METHOD.asNeeded : DOSE_METHOD.daily,
+                      });
+                    }}
                     isActive={dosageInputType === 'detailed'}
                   >
                     {dosageInputType === 'detailed' ? '간단하게' : '상세하게'}
@@ -958,11 +607,11 @@ const MedicationPage: React.FC = () => {
                         <label>1회 복용량</label>
                         <input
                           type="number"
-                          value={dosageDetails.amountPerDose}
+                          value={newMedication.amountPerIntake || ''}
                           onChange={(e) =>
-                            setDosageDetails({
-                              ...dosageDetails,
-                              amountPerDose: e.target.value,
+                            setNewMedication({
+                              ...newMedication,
+                              amountPerIntake: Number(e.target.value),
                             })
                           }
                           placeholder="1"
@@ -971,11 +620,11 @@ const MedicationPage: React.FC = () => {
                       <DosageInputGroup>
                         <label>단위</label>
                         <select
-                          value={dosageDetails.amountUnit}
+                          value={newMedication.doseUnit}
                           onChange={(e) =>
-                            setDosageDetails({
-                              ...dosageDetails,
-                              amountUnit: e.target.value,
+                            setNewMedication({
+                              ...newMedication,
+                              doseUnit: e.target.value as DOSE_UNIT,
                             })
                           }
                         >
@@ -1002,11 +651,11 @@ const MedicationPage: React.FC = () => {
                         <label>하루 복용 횟수</label>
                         <input
                           type="number"
-                          value={dosageDetails.timesPerDay}
+                          value={newMedication.intakeTimesPerDay || ''}
                           onChange={(e) =>
-                            setDosageDetails({
-                              ...dosageDetails,
-                              timesPerDay: e.target.value,
+                            setNewMedication({
+                              ...newMedication,
+                              intakeTimesPerDay: Number(e.target.value),
                             })
                           }
                           placeholder="3"
@@ -1032,78 +681,101 @@ const MedicationPage: React.FC = () => {
                       <label>총 복용량</label>
                       <input
                         type="number"
-                        value={dosageDetails.totalAmount}
+                        value={newMedication.doseAmount}
                         onChange={(e) =>
-                          setDosageDetails({
-                            ...dosageDetails,
-                            totalAmount: e.target.value,
+                          setNewMedication({
+                            ...newMedication,
+                            doseAmount: Number(e.target.value),
                           })
                         }
                         placeholder="3"
                       />
                     </DosageInputGroup>
+                    <DosageInputGroup>
+                      <label>단위</label>
+                      <select
+                        value={newMedication.doseUnit}
+                        onChange={(e) =>
+                          setNewMedication({
+                            ...newMedication,
+                            doseUnit: e.target.value as DOSE_UNIT,
+                          })
+                        }
+                      >
+                        {unitOptions.map((unit) => (
+                          <option key={unit} value={unit}>
+                            {unit}
+                          </option>
+                        ))}
+                      </select>
+                    </DosageInputGroup>
                   </SimpleDosageInput>
                 )}
               </DosageSection>
 
-              <DaySection>
-                <DaySectionHeader>
-                  <label>복용 요일 선택</label>
-                  <SelectAllButton
-                    isAllSelected={weekDays.every((d) =>
-                      newMedication.daysOfWeek.includes(d)
-                    )}
-                    onClick={toggleAllDays}
-                    type="button"
-                  >
-                    {weekDays.every((d) => newMedication.daysOfWeek.includes(d))
-                      ? '전체 해제'
-                      : '매일'}
-                  </SelectAllButton>
-                </DaySectionHeader>
-                <DayGrid>
-                  {weekDays.map((day) => (
-                    <DayButton
-                      key={day}
-                      isSelected={newMedication.daysOfWeek.includes(day)}
-                      onClick={() => handleDayOfWeekChange(day)}
-                    >
-                      {day}요일
-                    </DayButton>
-                  ))}
-                </DayGrid>
-              </DaySection>
-
-              <TimeSection>
-                <TimeSectionHeader>
-                  <label>복용 시간 선택</label>
-                  <TimePresetButtons>
-                    <TimePresetButton onClick={setMorningEvening} type="button">
-                      아침저녁
-                    </TimePresetButton>
-                    <TimePresetButton
-                      onClick={setMorningLunchDinner}
+              {dosageInputType === 'detailed' && (
+                <DaySection>
+                  <DaySectionHeader>
+                    <label>복용 요일 선택</label>
+                    <SelectAllButton
+                      isAllSelected={weekDays.every((d) =>
+                        (newMedication.daySlots || []).includes(d)
+                      )}
+                      onClick={toggleAllDays}
                       type="button"
                     >
-                      아침점심저녁
-                    </TimePresetButton>
-                    <TimePresetButton onClick={setAllTimes} type="button">
-                      전체
-                    </TimePresetButton>
-                  </TimePresetButtons>
-                </TimeSectionHeader>
-                <TimeGrid>
-                  {timeSlotOptions.map((timeSlot) => (
-                    <TimeButton
-                      key={timeSlot}
-                      isSelected={newMedication.timeSlots.includes(timeSlot)}
-                      onClick={() => handleTimeSlotChange(timeSlot)}
-                    >
-                      {timeSlot}
-                    </TimeButton>
-                  ))}
-                </TimeGrid>
-              </TimeSection>
+                      {weekDays.every((d) =>
+                        (newMedication.daySlots || []).includes(d)
+                      )
+                        ? '전체 해제'
+                        : '매일'}
+                    </SelectAllButton>
+                  </DaySectionHeader>
+                  <DayGrid>
+                    {weekDays.map((day) => (
+                      <DayButton
+                        key={day}
+                        isSelected={(newMedication.daySlots || []).includes(day)}
+                        onClick={() => handleDayOfWeekChange(day)}
+                      >
+                        {day}요일
+                      </DayButton>
+                    ))}
+                  </DayGrid>
+                </DaySection>
+              )}
+
+              {dosageInputType === 'detailed' && (
+                <TimeSection>
+                  <TimeSectionHeader>
+                    <label>복용 시간 선택</label>
+                    <TimePresetButtons>
+                      <TimePresetButton onClick={setMorningEvening} type="button">
+                        아침저녁
+                      </TimePresetButton>
+                      <TimePresetButton
+                        onClick={setMorningLunchDinner}
+                        type="button"
+                      >
+                        아침점심저녁
+                      </TimePresetButton>
+                    </TimePresetButtons>
+                  </TimeSectionHeader>
+                  <TimeGrid>
+                    {timeSlotOptions.map((timeSlot: DOSE_TIME) => (
+                      <TimeButton
+                        key={timeSlot}
+                        isSelected={(newMedication.timeSlots || []).includes(
+                          timeSlot
+                        )}
+                        onClick={() => handleTimeSlotChange(timeSlot)}
+                      >
+                        <span style={{ whiteSpace: 'pre-line' }}>{timeSlotOptionsToText[timeSlot]}</span>
+                      </TimeButton>
+                    ))}
+                  </TimeGrid>
+                </TimeSection>
+              )}
 
               <MemoSection>
                 <MemoButton
@@ -1131,7 +803,7 @@ const MedicationPage: React.FC = () => {
               </MemoSection>
 
               <ButtonSection>
-                <CancelButton type="button" onClick={resetForm}>
+                <CancelButton type="button" onClick={resetMedicationModal}>
                   초기화
                 </CancelButton>
                 <SaveButton type="button" onClick={addMedication}>
@@ -1143,26 +815,7 @@ const MedicationPage: React.FC = () => {
           document.body
         )}
 
-      {notification.isOpen &&
-        createPortal(
-          <NotificationOverlay isOpen={true}>
-            <NotificationDialog type={notification.type}>
-              <NotificationIcon type={notification.type}>
-                {notification.type === 'success' ? '✓' : '✗'}
-              </NotificationIcon>
-              <NotificationTitle type={notification.type}>
-                {notification.title}
-              </NotificationTitle>
-              <NotificationMessage>{notification.message}</NotificationMessage>
-              <NotificationProgress>
-                <NotificationProgressBar type={notification.type} />
-              </NotificationProgress>
-            </NotificationDialog>
-          </NotificationOverlay>,
-          document.body
-        )}
-
-      {isRecordModalOpen &&
+      {isRecordInputModalOpen &&
         createPortal(
           <ModalOverlay isOpen={true}>
             <RecordModalContent>
@@ -1189,19 +842,29 @@ const MedicationPage: React.FC = () => {
                 <label>기록 상태</label>
                 <StatusToggle>
                   <StatusButton
-                    isActive={recordForm.status === 'taken'}
+                    isActive={
+                      newMedicineRecord.status === DOSE_RECORD_STATUS.taken
+                    }
                     statusType="taken"
                     onClick={() =>
-                      setRecordForm({ ...recordForm, status: 'taken' })
+                      setNewMedicineRecord({
+                        ...newMedicineRecord,
+                        status: DOSE_RECORD_STATUS.taken,
+                      })
                     }
                   >
                     복용
                   </StatusButton>
                   <StatusButton
-                    isActive={recordForm.status === 'skipped'}
+                    isActive={
+                      newMedicineRecord.status === DOSE_RECORD_STATUS.missed
+                    }
                     statusType="skipped"
                     onClick={() =>
-                      setRecordForm({ ...recordForm, status: 'skipped' })
+                      setNewMedicineRecord({
+                        ...newMedicineRecord,
+                        status: DOSE_RECORD_STATUS.missed,
+                      })
                     }
                   >
                     건너뜀
@@ -1209,34 +872,41 @@ const MedicationPage: React.FC = () => {
                 </StatusToggle>
               </InputGroup>
 
-              <RecordAmountSection isVisible={recordForm.status === 'taken'}>
+              <RecordAmountSection
+                isVisible={
+                  newMedicineRecord.status === DOSE_RECORD_STATUS.taken
+                }
+              >
                 <label>복용량</label>
                 <RecordAmountRow>
                   <input
                     type="number"
-                    min="0.5"
                     step="0.5"
-                    value={recordForm.amount}
-                    onChange={(e) =>
-                      setRecordForm({
-                        ...recordForm,
-                        amount: Number(e.target.value),
-                      })
-                    }
+                    value={newMedicineRecord.amount}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      setNewMedicineRecord({
+                        ...newMedicineRecord,
+                        amount: value,
+                      });
+                    }}
                     placeholder="1"
                   />
-                  <select
-                    value={recordForm.unit}
-                    onChange={(e) =>
-                      setRecordForm({ ...recordForm, unit: e.target.value })
-                    }
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      background: '#f8f9fa',
+                      border: '1px solid #dee2e6',
+                      borderRadius: '4px',
+                      color: '#6c757d',
+                      minWidth: '80px',
+                      justifyContent: 'center',
+                    }}
                   >
-                    <option value="정">정</option>
-                    <option value="캡슐">캡슐</option>
-                    <option value="포">포</option>
-                    <option value="ml">ml</option>
-                    <option value="방울">방울</option>
-                  </select>
+                    {selectedMedicationForRecord?.doseUnit || DOSE_UNIT.pill}
+                  </div>
                 </RecordAmountRow>
               </RecordAmountSection>
 
@@ -1251,9 +921,12 @@ const MedicationPage: React.FC = () => {
                 {showRecordMemo && (
                   <RecordMemoTextarea>
                     <textarea
-                      value={recordForm.memo}
+                      value={newMedicineRecord.memo}
                       onChange={(e) =>
-                        setRecordForm({ ...recordForm, memo: e.target.value })
+                        setNewMedicineRecord({
+                          ...newMedicineRecord,
+                          memo: e.target.value,
+                        })
                       }
                       placeholder="특이사항이나 부작용 등을 기록하세요..."
                       rows={3}
@@ -1267,6 +940,200 @@ const MedicationPage: React.FC = () => {
                 <SaveButton onClick={saveRecord}>기록 저장</SaveButton>
               </ButtonSection>
             </RecordModalContent>
+          </ModalOverlay>,
+          document.body
+        )}
+
+      {isRecordListModalOpen &&
+        createPortal(
+          <ModalOverlay isOpen={true}>
+            <ModalContent>
+              <ModalHeader>
+                <ModalTitle>
+                  📋 {selectedMedicationForList?.name} 복용 기록
+                </ModalTitle>
+                <CloseButton onClick={closeRecordListModal}>×</CloseButton>
+              </ModalHeader>
+
+              <div style={{ padding: '20px' }}>
+                {selectedMedicationForList?.records &&
+                selectedMedicationForList.records.length > 0 ? (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {selectedMedicationForList.records
+                      .sort(
+                        (a: MedicationRecord, b: MedicationRecord) =>
+                          new Date(b.timestamp).getTime() -
+                          new Date(a.timestamp).getTime()
+                      )
+                      .map((record: MedicationRecord) => {
+                        const date = new Date(record.timestamp);
+                        const isToday =
+                          date.toDateString() === new Date().toDateString();
+                        const dateStr = date.toLocaleDateString('ko-KR', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          weekday: 'short',
+                        });
+                        const timeStr = date.toLocaleTimeString('ko-KR', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        });
+
+                        return (
+                          <div
+                            key={record.uuid}
+                            style={{
+                              background: isToday ? '#f0f8ff' : '#f8f9fa',
+                              border: `2px solid ${isToday ? '#2196f3' : '#e9ecef'}`,
+                              borderRadius: '12px',
+                              padding: '16px',
+                              position: 'relative',
+                              width: '80%',
+                              maxWidth: '80%',
+                            }}
+                          >
+                            {isToday && (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  top: '8px',
+                                  left: '12px',
+                                  background: '#2196f3',
+                                  color: 'white',
+                                  fontSize: '10px',
+                                  padding: '2px 6px',
+                                  borderRadius: '10px',
+                                  fontWeight: '600',
+                                  zIndex: 1,
+                                }}
+                              >
+                                오늘
+                              </div>
+                            )}
+
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'flex-start',
+                                marginBottom: '8px',
+                                marginTop: isToday ? '20px' : '0',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '12px',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontSize: '16px',
+                                    fontWeight: '600',
+                                    color: '#333',
+                                  }}
+                                >
+                                  {dateStr}
+                                </div>
+                                <div
+                                  style={{ fontSize: '14px', color: '#666' }}
+                                >
+                                  {timeStr}
+                                </div>
+                              </div>
+                              <div
+                                style={{
+                                  background:
+                                    record.status === DOSE_RECORD_STATUS.taken
+                                      ? '#4caf50'
+                                      : '#f44336',
+                                  color: 'white',
+                                  padding: '4px 12px',
+                                  borderRadius: '16px',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                }}
+                              >
+                                {record.status === DOSE_RECORD_STATUS.taken
+                                  ? '✓ 복용완료'
+                                  : '✗ 건너뜀'}
+                              </div>
+                            </div>
+
+                            {record.status === DOSE_RECORD_STATUS.taken && (
+                              <div
+                                style={{
+                                  fontSize: '14px',
+                                  color: '#666',
+                                  marginBottom: '8px',
+                                }}
+                              >
+                                💊 복용량:{' '}
+                                {record.amount && record.amount > 0
+                                  ? `${record.amount}${selectedMedicationForList?.doseUnit || '정'}`
+                                  : '기록되지 않음'}
+                              </div>
+                            )}
+
+                            {record.memo && (
+                              <div
+                                style={{
+                                  background: 'rgba(255, 255, 255, 0.7)',
+                                  padding: '8px 12px',
+                                  borderRadius: '6px',
+                                  fontSize: '14px',
+                                  color: '#555',
+                                  fontStyle: 'italic',
+                                }}
+                              >
+                                📝 {record.memo}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      textAlign: 'center',
+                      padding: '40px 20px',
+                      color: '#666',
+                    }}
+                  >
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>
+                      📝
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '18px',
+                        fontWeight: '500',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      아직 복용 기록이 없습니다
+                    </div>
+                    <div style={{ fontSize: '14px' }}>
+                      &ldquo;기록하기&rdquo; 버튼을 눌러 첫 복용 기록을
+                      남겨보세요!
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <ButtonSection>
+                <SaveButton onClick={closeRecordListModal}>닫기</SaveButton>
+              </ButtonSection>
+            </ModalContent>
           </ModalOverlay>,
           document.body
         )}

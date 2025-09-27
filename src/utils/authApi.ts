@@ -4,7 +4,7 @@ import {
   LoginResponse,
   SignupRequest,
   SignupResponse,
-  UserProfile,
+  SeniorProfile,
 } from '../types/apiTypes';
 
 const baseURL =
@@ -16,7 +16,7 @@ const api = axios.create({ baseURL });
 interface AuthApiResponse {
   success: boolean;
   message: string;
-  profile?: UserProfile;
+  profile?: SeniorProfile;
   token?: string;
 }
 

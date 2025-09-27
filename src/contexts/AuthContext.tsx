@@ -5,13 +5,18 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
-import { UserProfile, Identity } from '../types/apiTypes';
+import { SeniorProfile } from '../types/apiTypes';
 import { extractSubjectFromToken } from '../utils/tokenUtils';
+
+export interface Identity {
+  uuid: string;
+  token: string;
+}
 
 interface AuthContextType {
   isAuthenticated: boolean;
   identity: Identity | null;
-  profile: UserProfile | null;
+  profile: SeniorProfile | null;
   logout: () => void;
   loading: boolean;
 }
@@ -63,7 +68,7 @@ const removeStorageValue = (key: string): void => {
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<SeniorProfile | null>(null);
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
@@ -121,7 +126,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 };
 
 // 로그인/회원가입 성공 시 호출
-export const setAuthData = (token: string, profile: UserProfile): void => {
+export const setAuthData = (token: string, profile: SeniorProfile): void => {
   const uuid = extractSubjectFromToken(token);
   if (!uuid) {
     console.error('토큰에서 UUID 추출 실패');

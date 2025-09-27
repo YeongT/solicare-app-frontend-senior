@@ -244,17 +244,17 @@ export const MedicationProgressBar = styled.div<{ progress: number }>`
 
 export const MedicationGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 24px;
   @media (max-width: 1400px) {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
   @media (max-width: 800px) {
     grid-template-columns: 1fr;
   }
 `;
 
-export const MedicationCard = styled.div<{ taken: boolean }>`
+export const MedicationCard = styled.div<{ taken: boolean; shouldTakeToday?: boolean }>`
   background: ${({ theme }) => theme.colors.card};
   border-radius: 16px;
   padding: 24px;
@@ -262,10 +262,82 @@ export const MedicationCard = styled.div<{ taken: boolean }>`
   display: flex;
   flex-direction: column;
   min-height: 200px;
-  transition: transform 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
   position: relative;
+
+  /* 오늘 먹어야 하는 약 강조 테두리 */
+  border: ${({ shouldTakeToday, taken }) =>
+    shouldTakeToday && !taken
+      ? '3px solid #ff6b35'
+      : shouldTakeToday && taken
+      ? '3px solid #4caf50'
+      : '2px solid transparent'};
+
+  /* 오늘 먹어야 하는 약에 글로우 효과 */
+  ${({ shouldTakeToday, taken }) =>
+    shouldTakeToday && !taken &&
+    `
+      box-shadow: 0 4px 20px rgba(255, 107, 53, 0.2), 0 0 0 1px rgba(255, 107, 53, 0.1);
+      background: linear-gradient(135deg, #fff 0%, #fff8f6 100%);
+    `}
+
+  ${({ shouldTakeToday, taken }) =>
+    shouldTakeToday && taken &&
+    `
+      box-shadow: 0 4px 20px rgba(76, 175, 80, 0.15);
+      background: linear-gradient(135deg, #fff 0%, #f8fff8 100%);
+    `}
+
   &:hover {
     transform: translateY(-5px);
+    ${({ shouldTakeToday, taken }) =>
+      shouldTakeToday && !taken &&
+      `box-shadow: 0 8px 25px rgba(255, 107, 53, 0.3), 0 0 0 1px rgba(255, 107, 53, 0.2);`}
+  }
+`;
+
+// 메모 툴팁 컴포넌트
+export const MemoTooltip = styled.div`
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  max-width: 300px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+
+  /* 화살표 */
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid rgba(0, 0, 0, 0.9);
+  }
+`;
+
+// 카드에 호버 시 메모 표시를 위한 래퍼
+export const MedicationCardWrapper = styled.div`
+  position: relative;
+
+  ${MedicationCard}:hover ${MemoTooltip} {
+    opacity: 1;
+    visibility: visible;
   }
 `;
 
@@ -502,7 +574,7 @@ export const NotificationProgressBar = styled.div<{
 
 export const TopSection = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1.5fr;
+  grid-template-columns: 1fr 2.33fr;
   gap: 20px;
   margin-bottom: 30px;
 `;
@@ -560,9 +632,14 @@ export const DosageRow = styled.div`
 export const SimpleDosageInput = styled.div`
   display: flex;
   justify-content: center;
+  gap: 15px;
 
-  > div {
-    width: 300px;
+  > div:first-child {
+    width: 200px;
+  }
+
+  > div:last-child {
+    width: 120px;
   }
 `;
 
@@ -701,29 +778,36 @@ export const TimePresetButton = styled.button`
 
 export const TimeGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
 `;
 
 export const TimeButton = styled.button<{ isSelected: boolean }>`
-  padding: 12px 15px;
+  padding: 10px 12px;
   border: 2px solid
     ${(props) => (props.isSelected ? props.theme.colors.primary : '#e0e0e0')};
   background: ${(props) =>
     props.isSelected ? props.theme.colors.primary : 'white'};
   color: ${(props) => (props.isSelected ? 'white' : '#333')};
   border-radius: 8px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
+  font-size: 13px;
+  line-height: 1.3;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   &:hover {
     border-color: ${({ theme }) => theme.colors.primary};
     background: ${(props) => (props.isSelected ? '#1746a0' : '#f8f9fa')};
   }
   @media (max-width: 768px) {
     padding: 8px 10px;
-    font-size: 12px;
+    font-size: 11px;
+    min-height: 50px;
   }
 `;
 
