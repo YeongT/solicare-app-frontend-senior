@@ -1,1153 +1,1142 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { mockMedications } from '../data/mockData';
-import styled from 'styled-components';
-import { StatusBadge, NavButton } from '../components/StyledComponents';
+import { NavButton } from '../components/StyledComponents';
+import {
+  ButtonSection,
+  CancelButton,
+  CardButtonGroup,
+  CardDeleteButton,
+  CardEditButton,
+  CloseButton,
+  ContentLayout,
+  DateDisplay,
+  DayButton,
+  DayGrid,
+  DaySection,
+  DaySectionHeader,
+  DetailedDosageInputs,
+  DosageHeader,
+  DosageInputGroup,
+  DosageRow,
+  DosageSection,
+  InputGroup,
+  MedicationButton,
+  MedicationCard,
+  MedicationCardHeader,
+  MedicationCardWrapper,
+  MedicationContent,
+  MedicationGrid,
+  MedicationHeader,
+  MedicationName,
+  MedicationProgress,
+  MedicationProgressBar,
+  MedicationSectionTitle,
+  MedicationTimeDosage,
+  MedicationWrapper,
+  MemoButton,
+  MemoSection,
+  MemoTextarea,
+  MemoTooltip,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  ModalTitle,
+  NotificationDialog,
+  NotificationIcon,
+  NotificationMessage,
+  NotificationOverlay,
+  NotificationProgress,
+  NotificationProgressBar,
+  NotificationTitle,
+  OpenModalButton,
+  PageTitle,
+  RecordAmountRow,
+  RecordAmountSection,
+  RecordDateSection,
+  RecordMemoButton,
+  RecordMemoSection,
+  RecordMemoTextarea,
+  RecordModalContent,
+  RecordModalHeader,
+  SaveButton,
+  SelectAllButton,
+  SimpleDosageInput,
+  StatusButton,
+  StatusToggle,
+  SummarySection,
+  SummaryText,
+  SummaryValue,
+  TimeButton,
+  TimeGrid,
+  TimeInputGroup,
+  TimePresetButton,
+  TimePresetButtons,
+  TimeSection,
+  TimeSectionHeader,
+  ToggleButton,
+  TopSection,
+  TopSummaryCard,
+  WeeklyScheduleSection,
+} from '../styles/pages/MedicationPage.styles';
 
-interface MedicationItemProps {
-  taken: boolean;
-}
-
-interface Medication {
-  id: number;
-  name: string;
-  description: string;
-  dailyDosage: string;
-  medicationGuide: string;
-  memo: string;
-  daysOfWeek: string[];
-  timeSlots: string[];
-  taken: boolean;
-  time?: string; // 기존 데이터 호환성을 위해 유지
-  dosage?: string; // 기존 데이터 호환성을 위해 유지
-  note?: string; // 기존 데이터 호환성을 위해 유지
-}
-
-// Styled Components for Medication Page
-const MedicationWrapper = styled.div`
-  padding: 40px;
-  background-color: #f0f2f5;
-  min-height: 100vh;
-  font-family: 'Roboto', sans-serif;
-  max-width: 1800px;
-  margin: 0 auto;
-  box-sizing: border-box;
-  zoom: 0.8;
-  transform-origin: top center;
-`;
-
-const MedicationHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  background-color: white;
-  padding: 24px 35px;
-  border-radius: 16px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-`;
-
-const PageTitle = styled.h2`
-  font-size: 32px;
-  color: #343a40;
-  margin: 0;
-  font-weight: 700;
-`;
-
-const ToggleHistoryButton = styled(NavButton)`
-  margin-left: 15px;
-  font-size: 18px;
-`;
-
-const MediumText = styled.h2`
-  font-size: 28px;
-  font-weight: bold;
-  color: #333;
-  margin: 15px 0;
-`;
-
-const MedicationSectionTitle = styled.h3`
-  font-size: 24px;
-  color: #343a40;
-  margin: 0 0 32px 0;
-  font-weight: 600;
-`;
-
-const ContentLayout = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-`;
-
-const TopSummaryCard = styled.div`
-  background: white;
-  border-radius: 16px;
-  padding: 40px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  display: flex;
-  align-items: flex-start;
-  gap: 40px;
-`;
-
-const SummarySection = styled.div`
-  flex: 0.4;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-`;
-
-const WeeklyScheduleSection = styled.div`
-  flex: 0.6;
-`;
-
-const MedicationSummaryCard = styled.div`
-  background: white;
-  border-radius: 16px;
-  padding: 40px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  text-align: center;
-`;
-
-const SummaryText = styled.p`
-  font-size: 26px;
-  color: #555;
-  margin-bottom: 20px;
-`;
-
-const SummaryValue = styled.p`
-  font-size: 64px;
-  font-weight: bold;
-  color: #007bff;
-  margin: 0 0 20px 0;
-`;
-
-const MedicationProgress = styled.div`
-  width: 100%;
-  height: 25px;
-  background-color: #e9ecef;
-  border-radius: 12px;
-  overflow: hidden;
-  margin-top: 20px;
-`;
-
-const MedicationProgressBar = styled.div<{ progress: number }>`
-  height: 100%;
-  width: ${(props) => props.progress}%;
-  background-color: #28a745;
-  border-radius: 12px;
-  transition: width 0.5s ease-in-out;
-`;
-
-const MedicationGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
-
-  @media (max-width: 1400px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (max-width: 800px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const MedicationCard = styled.div<{ taken: boolean }>`
-  background: white;
-  border-radius: 16px;
-  padding: 35px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  display: flex;
-  flex-direction: column;
-  min-height: 240px;
-  transition: transform 0.2s ease-in-out;
-
-  &:hover {
-    transform: translateY(-5px);
-  }
-`;
-
-const MedicationContent = styled.div`
-  margin-bottom: 24px;
-`;
-
-const MedicationName = styled.h4`
-  font-size: 28px;
-  color: #343a40;
-  margin: 0 0 12px 0;
-  font-weight: 600;
-`;
-
-const MedicationTimeDosage = styled.p`
-  font-size: 20px;
-  color: #6c757d;
-  margin: 0 0 8px 0;
-`;
-
-const MedicationNote = styled.p`
-  font-size: 18px;
-  color: #888;
-  margin: 0;
-`;
-
-const BadgeContainer = styled.div`
-  display: flex;
-  gap: 10px;
-  margin-bottom: 16px;
-`;
-
-const MedicationButton = styled.button<{ taken: boolean }>`
-  width: 100%;
-  padding: 16px 24px;
-  border: none;
-  border-radius: 12px;
-  font-size: 18px;
-  font-weight: 600;
-  color: white;
-  background-color: ${(props) => (props.taken ? '#6c757d' : '#007bff')};
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-
-  &:hover {
-    transform: translateY(-2px);
-    background-color: ${(props) => (props.taken ? '#5a6268' : '#0056b3')};
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const HistoryCard = styled.div`
-  background: white;
-  border-radius: 16px;
-  padding: 35px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  margin-bottom: 32px;
-`;
-
-const HistoryItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 0;
-  border-bottom: 1px solid #eee;
-
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
-const HistoryDay = styled.p`
-  font-size: 18px;
-  font-weight: bold;
-  color: #343a40;
-  margin: 0;
-  width: 80px;
-`;
-
-const HistoryMedList = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  flex: 1;
-  justify-content: flex-end;
-`;
-
-const HistoryStatusBadge = styled(StatusBadge)<{
-  status: 'taken' | 'not-taken';
-}>`
-  padding: 6px 12px;
-  font-size: 14px;
-  border-radius: 16px;
-`;
-
-const StatisticsCard = styled(HistoryCard)`
-  margin-top: 32px;
-`;
-
-const StatisticItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const StatisticLabel = styled.p`
-  font-size: 18px;
-  color: #555;
-  margin: 0;
-`;
-
-const StatisticValue = styled.p`
-  font-size: 18px;
-  font-weight: bold;
-  color: #343a40;
-  margin: 0;
-`;
-
-const AddMedicationForm = styled.div`
-  background: white;
-  border-radius: 16px;
-  padding: 30px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  margin-bottom: 32px;
-`;
-
-const FormRow = styled.div`
-  display: flex;
-  gap: 15px;
-  margin-bottom: 20px;
-  align-items: end;
-`;
-
-const FormGroup = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-`;
-
-const FormLabel = styled.label`
-  font-size: 16px;
-  font-weight: 600;
-  color: #343a40;
-  margin-bottom: 8px;
-`;
-
-const FormInput = styled.input`
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 16px;
-  
-  &:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-  }
-`;
-
-const FormSelect = styled.select`
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 16px;
-  
-  &:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-  }
-`;
-
-const FormTextArea = styled.textarea`
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 16px;
-  resize: vertical;
-  min-height: 40px;
-  max-height: 80px;
-  font-family: inherit;
-  
-  &:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-  }
-`;
-
-const CheckboxGroup = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  margin-top: 8px;
-`;
-
-const CheckboxItem = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-  
-  input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-  }
-  
-  span {
-    font-size: 16px;
-    color: #343a40;
-  }
-`;
-
-const FormGridContainer = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const AddButton = styled.button`
-  background: #28a745;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  transition: background-color 0.2s;
-  height: fit-content;
-  
-  &:hover {
-    background: #218838;
-  }
-`;
-
-const FormFullWidth = styled.div`
-  grid-column: 1 / -1;
-`;
-
-const ResetButton = styled.button`
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  transition: background-color 0.2s;
-  height: fit-content;
-  margin-left: 10px;
-  
-  &:hover {
-    background: #5a6268;
-  }
-`;
-
-const DeleteButton = styled.button`
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: background-color 0.2s;
-  margin-left: 10px;
-  
-  &:hover {
-    background: #c82333;
-  }
-`;
+import { useMedication } from '../hooks/useMedication';
+import { DOSE_DATE, DOSE_METHOD, DOSE_RECORD_STATUS, DOSE_TIME, DOSE_UNIT, Medication, MedicationRecord } from '../types/apiTypes';
 
 const MedicationPage: React.FC = () => {
   const navigate = useNavigate();
-  const [medications, setMedications] = useState(mockMedications);
-  const [showHistory, setShowHistory] = useState(false);
-  
-  // 새 약 추가 폼 상태 - 상세 정보
-  const [newMedication, setNewMedication] = useState({
-    name: '',
-    description: '',
-    dailyDosage: '',
-    medicationGuide: '',
-    memo: '',
-    daysOfWeek: [] as string[],
-    timeSlots: [] as string[]
-  });
 
-  const weekDays = ['월', '화', '수', '목', '금', '토', '일'];
-  const timeSlotOptions = [
-    '아침 (06:00-09:00)',
-    '점심 (11:00-14:00)', 
-    '저녁 (17:00-20:00)',
-    '취침 전 (21:00-23:00)',
-    '기타 시간'
-  ];
+  // useMedication에서 가져온 상태와 함수들
+  const {
+    sortedMedications,
+    isMedicationModalOpen,
+    isRecordInputModalOpen,
+    isRecordListModalOpen,
+    showMemo,
+    showRecordMemo,
+    selectedMedicationForRecord,
+    selectedMedicationForList,
+    newMedication,
+    newMedicineRecord,
+    dosageInputType,
+    recordTime,
+    notification,
+    takenCount,
+    totalCount,
+    setNewMedication,
+    setNewMedicineRecord,
+    setDosageInputType,
+    setRecordTime,
+    setShowMemo,
+    setShowRecordMemo,
+    openModal,
+    closeModal,
+    openRecordInputModal,
+    closeRecordModal,
+    openRecordListModal,
+    closeRecordListModal,
+    handleDayOfWeekChange,
+    toggleAllDays,
+    handleTimeSlotChange,
+    setMorningEvening,
+    setMorningLunchDinner,
+    addMedication,
+    resetForm: resetMedicationModal,
+    saveRecord,
+    deleteMedication,
+    getCurrentDate,
+    getStatusMessage,
+    isMedicationTakenToday,
+    getMedicationsForDay,
+    getDayMedicationStatus,
+    formatTimeSlots,
+    formatDaySlots,
+  } = useMedication();
 
-  const handleDayOfWeekChange = (day: string) => {
-    setNewMedication(prev => ({
-      ...prev,
-      daysOfWeek: prev.daysOfWeek.includes(day)
-        ? prev.daysOfWeek.filter(d => d !== day)
-        : [...prev.daysOfWeek, day]
-    }));
-  };
+  // 상수 정의
+  const weekDays = Object.values(DOSE_DATE);
+  const unitOptions = Object.values(DOSE_UNIT);
+  const timeSlotOptions = Object.values(DOSE_TIME);
 
-  const handleTimeSlotChange = (timeSlot: string) => {
-    setNewMedication(prev => ({
-      ...prev,
-      timeSlots: prev.timeSlots.includes(timeSlot)
-        ? prev.timeSlots.filter(t => t !== timeSlot)
-        : [...prev.timeSlots, timeSlot]
-    }));
-  };
-
-  const addMedication = () => {
-    if (newMedication.name.trim() && newMedication.dailyDosage.trim() && 
-        newMedication.daysOfWeek.length > 0 && newMedication.timeSlots.length > 0) {
-      
-      const newMed = {
-        id: Date.now(),
-        name: newMedication.name,
-        description: newMedication.description,
-        dailyDosage: newMedication.dailyDosage,
-        medicationGuide: newMedication.medicationGuide,
-        memo: newMedication.memo,
-        daysOfWeek: newMedication.daysOfWeek,
-        timeSlots: newMedication.timeSlots,
-        taken: false,
-        // 기존 인터페이스 호환성을 위한 필드들
-        time: newMedication.timeSlots[0]?.includes('아침') ? '08:00' : 
-              newMedication.timeSlots[0]?.includes('점심') ? '12:00' :
-              newMedication.timeSlots[0]?.includes('저녁') ? '18:00' : '21:00',
-        dosage: newMedication.dailyDosage,
-        note: newMedication.memo
-      };
-      
-      setMedications([...medications, newMed]);
-      resetForm();
-    } else {
-      alert('필수 항목을 모두 입력해주세요.');
-    }
-  };
-
-  const resetForm = () => {
-    setNewMedication({
-      name: '',
-      description: '',
-      dailyDosage: '',
-      medicationGuide: '',
-      memo: '',
-      daysOfWeek: [],
-      timeSlots: []
-    });
-  };
-
-  const toggleMedication = (id: number) => {
-    setMedications(
-      medications.map((med) =>
-        med.id === id ? { ...med, taken: !med.taken } : med
-      )
-    );
-  };
-
-  const deleteMedication = (id: number) => {
-    setMedications(medications.filter(med => med.id !== id));
-  };
-
-  const takenCount = medications.filter((med) => med.taken).length;
-  const totalCount = medications.length;
-
-  const getNextMedicationTime = () => {
-    const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes();
-
-    // 미복용 약물들의 시간을 분으로 변환
-    const upcomingMeds = medications
-      .filter((med) => !med.taken)
-      .map((med) => {
-        const [hours, minutes] = med.time.split(':').map(Number);
-        const medTime = hours * 60 + minutes;
-        return {
-          ...med,
-          timeInMinutes: medTime,
-        };
-      })
-      .sort((a, b) => a.timeInMinutes - b.timeInMinutes);
-
-    if (upcomingMeds.length === 0) {
-      return '모든 약물을 복용했습니다!';
-    }
-
-    // 오늘 남은 약물 중 가장 가까운 시간 찾기
-    let nextMed = upcomingMeds.find((med) => med.timeInMinutes > currentTime);
-
-    if (!nextMed) {
-      // 오늘 남은 약물이 없으면 내일 첫 번째 약물
-      nextMed = upcomingMeds[0];
-      const minutesUntilNext = 24 * 60 - currentTime + nextMed.timeInMinutes;
-      const hoursUntil = Math.floor(minutesUntilNext / 60);
-      const minutesUntil = minutesUntilNext % 60;
-      return `다음 복용까지 ${hoursUntil}시간 ${minutesUntil}분 남았습니다`;
-    }
-
-    const minutesUntilNext = nextMed.timeInMinutes - currentTime;
-    const hoursUntil = Math.floor(minutesUntilNext / 60);
-    const minutesUntil = minutesUntilNext % 60;
-
-    if (hoursUntil > 0) {
-      return `다음 복용까지 ${hoursUntil}시간 ${minutesUntil}분 남았습니다`;
-    } else {
-      return `다음 복용까지 ${minutesUntil}분 남았습니다`;
-    }
-  };
-
+  // 헬퍼 함수들
   const getTimeStatus = (time: string) => {
     const now = new Date();
     const [hours, minutes] = time.split(':').map(Number);
-    const medTime = new Date();
-    medTime.setHours(hours, minutes, 0, 0);
+    const medicationTime = new Date(now);
+    medicationTime.setHours(hours, minutes, 0, 0);
 
-    const diff = now.getTime() - medTime.getTime();
-    const diffHours = diff / (1000 * 60 * 60);
+    return now > medicationTime ? 'overdue' : 'upcoming';
+  };
 
-    if (diffHours < 0) return 'upcoming';
-    if (diffHours < 1) return 'current';
-    return 'overdue';
+  React.useEffect(() => {
+    const modalOpen =
+      isMedicationModalOpen || isRecordInputModalOpen || isRecordListModalOpen;
+
+    document.body.style.overflow = modalOpen ? 'hidden' : '';
+    document.documentElement.style.overflow = modalOpen ? 'hidden' : '';
+
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [isMedicationModalOpen, isRecordInputModalOpen, isRecordListModalOpen]);
+
+  const timeSlotOptionsToText = {
+    [DOSE_TIME.morning]: '아침\n(06:00-08:00)',
+    [DOSE_TIME.lunch]: '점심\n(11:00-13:00)',
+    [DOSE_TIME.dinner]: '저녁\n(17:00-19:00)',
+    [DOSE_TIME.night]: '취침 전\n(21:00-23:00)',
+    [DOSE_TIME.any]: '아무때나',
   };
 
   return (
-    <MedicationWrapper>
+    <MedicationWrapper
+      modalOpen={isMedicationModalOpen || isRecordInputModalOpen}
+    >
       <MedicationHeader>
         <PageTitle>💊 약물 복용 관리</PageTitle>
-        <div>
-          <ToggleHistoryButton onClick={() => setShowHistory(!showHistory)}>
-            {showHistory ? '오늘 약' : '기록 보기'}
-          </ToggleHistoryButton>
-          <NavButton onClick={() => navigate('/')}>홈으로</NavButton>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <NavButton onClick={() => navigate('/dashboard')}>
+            대시보드 메인
+          </NavButton>
         </div>
       </MedicationHeader>
 
-      {!showHistory ? (
-        <>
-          <MedicationSectionTitle>오늘의 약 복용</MedicationSectionTitle>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '30px',
+        }}
+      >
+        <MedicationSectionTitle>오늘의 약 복용</MedicationSectionTitle>
+        <OpenModalButton onClick={openModal}>+ 새 약 추가</OpenModalButton>
+      </div>
 
-          {/* 새 약 추가 폼 */}
-          <AddMedicationForm>
-            <h3 style={{ marginBottom: '25px', color: '#343a40', fontSize: '24px' }}>새 약 추가</h3>
-            
-            <FormGridContainer>
-              <FormGroup>
-                <FormLabel>약 이름 *</FormLabel>
-                <FormInput
-                  type="text"
-                  placeholder="약 이름을 입력하세요"
-                  value={newMedication.name}
-                  onChange={(e) => setNewMedication(prev => ({...prev, name: e.target.value}))}
-                />
-              </FormGroup>
-              
-              <FormGroup>
-                <FormLabel>총 복용량 (하루 기준) *</FormLabel>
-                <FormInput
-                  type="text"
-                  placeholder="예: 1정 2회, 1알 3번 등"
-                  value={newMedication.dailyDosage}
-                  onChange={(e) => setNewMedication(prev => ({...prev, dailyDosage: e.target.value}))}
-                />
-              </FormGroup>
-            </FormGridContainer>
-
-            <FormFullWidth>
-              <FormGroup>
-                <FormLabel>약 설명</FormLabel>
-                <FormTextArea
-                  placeholder="약의 효능, 작용 등을 간단히 입력하세요"
-                  value={newMedication.description}
-                  onChange={(e) => setNewMedication(prev => ({...prev, description: e.target.value}))}
-                  rows={1}
-                />
-              </FormGroup>
-            </FormFullWidth>
-
-            <FormFullWidth>
-              <FormGroup>
-                <FormLabel>복약지도</FormLabel>
-                <FormTextArea
-                  placeholder="복용 방법, 주의사항 등을 입력하세요 (예: 식후 30분, 충분한 물과 함께)"
-                  value={newMedication.medicationGuide}
-                  onChange={(e) => setNewMedication(prev => ({...prev, medicationGuide: e.target.value}))}
-                  rows={1}
-                />
-              </FormGroup>
-            </FormFullWidth>
-
-            <FormFullWidth>
-              <FormGroup>
-                <FormLabel>메모</FormLabel>
-                <FormTextArea
-                  placeholder="기타 메모사항을 자유롭게 입력하세요"
-                  value={newMedication.memo}
-                  onChange={(e) => setNewMedication(prev => ({...prev, memo: e.target.value}))}
-                  rows={1}
-                />
-              </FormGroup>
-            </FormFullWidth>
-
-            <FormGridContainer>
-              <FormGroup>
-                <FormLabel>먹어야 하는 요일 *</FormLabel>
-                <CheckboxGroup>
-                  {weekDays.map(day => (
-                    <CheckboxItem key={day}>
-                      <input
-                        type="checkbox"
-                        checked={newMedication.daysOfWeek.includes(day)}
-                        onChange={() => handleDayOfWeekChange(day)}
-                      />
-                      <span>{day}요일</span>
-                    </CheckboxItem>
-                  ))}
-                </CheckboxGroup>
-              </FormGroup>
-
-              <FormGroup>
-                <FormLabel>먹어야 하는 시간대 *</FormLabel>
-                <CheckboxGroup>
-                  {timeSlotOptions.map(timeSlot => (
-                    <CheckboxItem key={timeSlot}>
-                      <input
-                        type="checkbox"
-                        checked={newMedication.timeSlots.includes(timeSlot)}
-                        onChange={() => handleTimeSlotChange(timeSlot)}
-                      />
-                      <span>{timeSlot}</span>
-                    </CheckboxItem>
-                  ))}
-                </CheckboxGroup>
-              </FormGroup>
-            </FormGridContainer>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
-              <ResetButton onClick={resetForm}>초기화</ResetButton>
-              <AddButton onClick={addMedication}>약 추가</AddButton>
-            </div>
-          </AddMedicationForm>
-
-          <ContentLayout>
-            {/* 위쪽 가로 배치 - 복용 완료 요약 및 주간 스케줄 */}
-            <TopSummaryCard>
-              <SummarySection>
-                <SummaryText>복용 완료</SummaryText>
-                <SummaryValue>
-                  {takenCount} / {totalCount}
-                </SummaryValue>
-                <MedicationProgress>
-                  <MedicationProgressBar
-                    progress={(takenCount / totalCount) * 100}
-                  />
-                </MedicationProgress>
-                <div
-                  style={{
-                    marginTop: '20px',
-                    fontSize: '16px',
-                    color: '#666',
-                    padding: '12px',
-                    background: '#f8f9fa',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  <span role="img" aria-label="reminder">
-                    ⏰
-                  </span>
-                  {getNextMedicationTime()}
-                </div>
-              </SummarySection>
-
-              <WeeklyScheduleSection>
-                <div
-                  style={{
-                    fontSize: '20px',
-                    fontWeight: 'bold',
-                    color: '#343a40',
-                    marginBottom: '20px',
-                  }}
-                >
-                  📅 주간 복용 스케줄
-                </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
-                  }}
-                >
-                  {[
-                    '월요일',
-                    '화요일',
-                    '수요일',
-                    '목요일',
-                    '금요일',
-                    '토요일',
-                    '일요일',
-                  ].map((day, index) => {
-                    const isToday =
-                      index === new Date().getDay() - 1 ||
-                      (new Date().getDay() === 0 && index === 6);
-
-                    // 요일별 약물 스케줄 정의
-                    const weeklyMedications: { [key: number]: string[] } = {
-                      0: ['혈압약', '당뇨약', '비타민'], // 월요일
-                      1: ['혈압약', '당뇨약', '비타민', '관절약'], // 화요일
-                      2: ['혈압약', '당뇨약'], // 수요일 (가벼운 날)
-                      3: ['혈압약', '당뇨약', '비타민', '소화제'], // 목요일
-                      4: ['혈압약', '당뇨약', '비타민'], // 금요일
-                      5: ['혈압약', '관절약', '수면보조제'], // 토요일 (주말 스케줄)
-                      6: ['혈압약', '비타민', '수면보조제'], // 일요일 (주말 스케줄)
-                    };
-
-                    const dayMedications: string[] = weeklyMedications[
-                      index
-                    ] || ['혈압약', '당뇨약'];
-
-                    return (
-                      <div
-                        key={day}
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          padding: '12px 16px',
-                          background: isToday ? '#e3f2fd' : '#f8f9fa',
-                          borderRadius: '8px',
-                          border: isToday
-                            ? '2px solid #2196f3'
-                            : '1px solid #e9ecef',
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: '16px',
-                            fontWeight: isToday ? 'bold' : 'normal',
-                            color: isToday ? '#1976d2' : '#666',
-                            minWidth: '60px',
-                          }}
-                        >
-                          {day}
-                          {isToday && (
-                            <span
-                              style={{ fontSize: '12px', marginLeft: '4px' }}
-                            >
-                              (오늘)
-                            </span>
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            display: 'flex',
-                            gap: '6px',
-                            flexWrap: 'wrap',
-                          }}
-                        >
-                          {dayMedications.map(
-                            (medName: string, medIndex: number) => {
-                              // 오늘인 경우 실제 복용 상태 확인
-                              let medStatus = 'default';
-                              if (isToday) {
-                                const actualMed = medications.find(
-                                  (m) => m.name === medName
-                                );
-                                if (actualMed) {
-                                  medStatus = actualMed.taken
-                                    ? 'taken'
-                                    : 'not-taken';
-                                }
-                              }
-
-                              return (
-                                <div
-                                  key={medIndex}
-                                  style={{
-                                    fontSize: '12px',
-                                    padding: '4px 8px',
-                                    background:
-                                      isToday && medStatus === 'taken'
-                                        ? '#4caf50'
-                                        : isToday && medStatus === 'not-taken'
-                                          ? '#ff9800'
-                                          : '#e0e0e0',
-                                    color:
-                                      isToday && medStatus !== 'default'
-                                        ? 'white'
-                                        : '#666',
-                                    borderRadius: '12px',
-                                    fontWeight: '500',
-                                  }}
-                                >
-                                  {medName}
-                                </div>
-                              );
-                            }
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </WeeklyScheduleSection>
-            </TopSummaryCard>
-
-            {/* 아래쪽 4개 약물 카드 1행 배치 */}
-            <MedicationGrid>
-              {medications.map((medication) => {
-                const timeStatus = getTimeStatus(medication.time || '08:00');
-                // 타입 안전성을 위한 확장된 타입 정의
-                const med = medication as Medication;
-                
-                return (
-                  <MedicationCard key={medication.id} taken={medication.taken}>
-                    <MedicationContent>
-                      <MedicationName>{medication.name}</MedicationName>
-                      
-                      {/* 새로운 필드들 표시 - 안전한 접근 */}
-                      {med.description && (
-                        <MedicationTimeDosage style={{ color: '#666', marginBottom: '8px' }}>
-                          📋 {med.description}
-                        </MedicationTimeDosage>
-                      )}
-                      
-                      <MedicationTimeDosage>
-                        💊 {med.dailyDosage || medication.dosage || '정보 없음'}
-                      </MedicationTimeDosage>
-                      
-                      {med.daysOfWeek && med.daysOfWeek.length > 0 && (
-                        <MedicationTimeDosage>
-                          📅 {med.daysOfWeek.join(', ')}요일
-                        </MedicationTimeDosage>
-                      )}
-                      
-                      {med.timeSlots && med.timeSlots.length > 0 && (
-                        <MedicationTimeDosage>
-                          ⏰ {med.timeSlots.join(', ')}
-                        </MedicationTimeDosage>
-                      )}
-                      
-                      {medication.time && (
-                        <MedicationTimeDosage>
-                          🕒 {medication.time}
-                        </MedicationTimeDosage>
-                      )}
-                      
-                      {med.medicationGuide && (
-                        <MedicationNote style={{ fontSize: '16px', color: '#007bff', marginBottom: '8px' }}>
-                          🔸 {med.medicationGuide}
-                        </MedicationNote>
-                      )}
-                      
-                      {(med.memo || medication.note) && (
-                        <MedicationNote>
-                          📝 {med.memo || medication.note}
-                        </MedicationNote>
-                      )}
-                    </MedicationContent>
-                    <div style={{ marginTop: 'auto' }}>
-                      <BadgeContainer>
-                        <StatusBadge
-                          status={medication.taken ? 'taken' : 'not-taken'}
-                        >
-                          {medication.taken ? '복용완료' : '미복용'}
-                        </StatusBadge>
-                        {timeStatus === 'overdue' && !medication.taken && (
-                          <StatusBadge status="not-taken">
-                            시간 지남
-                          </StatusBadge>
-                        )}
-                      </BadgeContainer>
-                      <MedicationButton
-                        taken={medication.taken}
-                        onClick={() => toggleMedication(medication.id)}
-                      >
-                        {medication.taken ? '복용 취소' : '복용하기'}
-                      </MedicationButton>
-                      <DeleteButton onClick={() => deleteMedication(medication.id)}>
-                        삭제
-                      </DeleteButton>
-                    </div>
-                  </MedicationCard>
-                );
-              })}
-            </MedicationGrid>
-          </ContentLayout>
-        </>
-      ) : (
-        <>
-          <MedicationSectionTitle>복용 기록</MedicationSectionTitle>
-          <HistoryCard style={{ marginTop: '20px' }}>
-            <MediumText>이번 주 복용 현황</MediumText>
+      <ContentLayout>
+        <TopSummaryCard>
+          <SummarySection>
+            <SummaryText>복용 완료</SummaryText>
+            <SummaryValue>
+              {takenCount} / {totalCount}
+            </SummaryValue>
+            <MedicationProgress>
+              <MedicationProgressBar
+                progress={totalCount > 0 ? (takenCount / totalCount) * 100 : 0}
+              />
+            </MedicationProgress>
             <div
               style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(7, 1fr)',
-                gap: '12px',
+                marginTop: '20px',
+                fontSize: '16px',
+                color: '#666',
+                padding: '12px',
+                background: '#f8f9fa',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+              }}
+            >
+              <span role="img" aria-label="reminder">
+                ⏰
+              </span>
+              {getStatusMessage()}
+            </div>
+          </SummarySection>
+
+          <WeeklyScheduleSection>
+            <div
+              style={{
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: '#343a40',
                 marginBottom: '20px',
               }}
             >
-              {['월', '화', '수', '목', '금', '토', '일'].map((day, index) => (
-                <div key={day} style={{ textAlign: 'center' }}>
-                  <div
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      background: index <= 3 ? '#e3f2fd' : '#bbdefb',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto 8px',
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      color: '#1976d2',
-                    }}
-                  >
-                    {day}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: '14px',
-                      color: index <= 3 ? '#4caf50' : '#2196f3',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {index <= 3 ? '100%' : '66%'}
-                  </div>
-                </div>
-              ))}
+              📅 주간 복용 스케줄
             </div>
-            {['혈압약', '당뇨약', '비타민'].map((med, index) => (
-              <HistoryItem key={med}>
-                <HistoryDay style={{ width: 'auto', marginRight: '15px' }}>
-                  {med}
-                </HistoryDay>
-                <HistoryMedList>
-                  {[...Array(7)].map((_, i) => (
-                    <HistoryStatusBadge
-                      key={i}
-                      status={index === 2 && i < 3 ? 'not-taken' : 'taken'}
-                      style={{ minWidth: '30px', textAlign: 'center' }}
-                    >
-                      {index === 2 && i < 3 ? '✗' : '✓'}
-                    </HistoryStatusBadge>
-                  ))}
-                </HistoryMedList>
-              </HistoryItem>
-            ))}
-          </HistoryCard>
-
-          <StatisticsCard>
-            <MediumText>월간 복용 통계</MediumText>
             <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '20px',
-              }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
             >
-              <div
-                style={{
-                  background: '#f5f5f5',
-                  padding: '20px',
-                  borderRadius: '12px',
-                  textAlign: 'center',
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: '36px',
-                    fontWeight: 'bold',
-                    color: '#2196f3',
-                    marginBottom: '8px',
-                  }}
-                >
-                  89%
-                </div>
-                <div style={{ color: '#666' }}>이번 달 평균 복용률</div>
-              </div>
-              <div
-                style={{
-                  background: '#f5f5f5',
-                  padding: '20px',
-                  borderRadius: '12px',
-                  textAlign: 'center',
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: '36px',
-                    fontWeight: 'bold',
-                    color: '#4caf50',
-                    marginBottom: '8px',
-                  }}
-                >
-                  15일
-                </div>
-                <div style={{ color: '#666' }}>연속 복용 달성</div>
-              </div>
-              <StatisticItem
-                style={{
-                  gridColumn: '1 / -1',
-                  background: '#fff',
-                  padding: '15px',
-                  borderRadius: '8px',
-                }}
-              >
-                <div>
-                  <StatisticLabel
-                    style={{
-                      marginBottom: '5px',
-                      color: '#333',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    복용 성공률 추이
-                  </StatisticLabel>
+              {[
+                '월요일',
+                '화요일',
+                '수요일',
+                '목요일',
+                '금요일',
+                '토요일',
+                '일요일',
+              ].map((day, index) => {
+                const isToday =
+                  index === new Date().getDay() - 1 ||
+                  (new Date().getDay() === 0 && index === 6);
+                const dayEnum = Object.values(DOSE_DATE)[index];
+                const dayMedications = getMedicationsForDay(dayEnum);
+                const dayStatus = getDayMedicationStatus(dayEnum);
+                let backgroundColor = '#f8f9fa';
+                let borderColor = '#e9ecef';
+                if (isToday) {
+                  switch (dayStatus) {
+                    case 'all-taken':
+                      backgroundColor = '#e8f5e8';
+                      borderColor = '#4caf50';
+                      break;
+                    case 'partial-taken':
+                      backgroundColor = '#fff3e0';
+                      borderColor = '#ff9800';
+                      break;
+                    case 'not-taken':
+                      backgroundColor = '#ffebee';
+                      borderColor = '#f44336';
+                      break;
+                    default:
+                      backgroundColor = '#e3f2fd';
+                      borderColor = '#2196f3';
+                  }
+                }
+                return (
                   <div
+                    key={day}
                     style={{
                       display: 'flex',
+                      justifyContent: 'space-between',
                       alignItems: 'center',
-                      gap: '4px',
+                      padding: '12px 16px',
+                      background: backgroundColor,
+                      borderRadius: '8px',
+                      border: `2px solid ${borderColor}`,
                     }}
                   >
-                    {[85, 92, 88, 95, 89].map((value, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          height: `${value}px`,
-                          width: '30px',
-                          background: value >= 90 ? '#4caf50' : '#2196f3',
-                          borderRadius: '4px',
-                          position: 'relative',
-                        }}
-                      >
+                    <div
+                      style={{
+                        fontSize: '16px',
+                        fontWeight: isToday ? 'bold' : 'normal',
+                        color: isToday ? '#1976d2' : '#666',
+                        minWidth: '60px',
+                      }}
+                    >
+                      {day}
+                      {isToday && (
+                        <span style={{ fontSize: '12px', marginLeft: '4px' }}>
+                          (오늘)
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}
+                    >
+                      {dayMedications.length > 0 ? (
+                        dayMedications.map(
+                          (med: Medication, medIndex: number) => {
+                            let medColor = '#666';
+                            let medBackground = '#e0e0e0';
+                            if (isToday) {
+                              medColor = 'white';
+                              medBackground = isMedicationTakenToday(med)
+                                ? '#4caf50'
+                                : '#f44336';
+                            }
+                            return (
+                              <div
+                                key={medIndex}
+                                style={{
+                                  fontSize: '12px',
+                                  padding: '4px 8px',
+                                  background: medBackground,
+                                  color: medColor,
+                                  borderRadius: '12px',
+                                  fontWeight: '500',
+                                }}
+                              >
+                                {med.name}
+                              </div>
+                            );
+                          }
+                        )
+                      ) : (
                         <div
                           style={{
-                            position: 'absolute',
-                            top: '-20px',
-                            width: '100%',
-                            textAlign: 'center',
                             fontSize: '12px',
+                            padding: '4px 8px',
+                            background: '#e0e0e0',
+                            color: '#666',
+                            borderRadius: '12px',
+                            fontWeight: '500',
                           }}
                         >
-                          {value}%
+                          복용할 약 없음
                         </div>
-                      </div>
-                    ))}
+                      )}
+                    </div>
                   </div>
-                </div>
-              </StatisticItem>
+                );
+              })}
             </div>
-          </StatisticsCard>
-        </>
-      )}
+          </WeeklyScheduleSection>
+        </TopSummaryCard>
+
+        <MedicationGrid>
+          {sortedMedications.map((medication: Medication) => {
+            // 오늘 복용해야 하는 약인지 판별
+            const today = new Date();
+            const allDays: DOSE_DATE[] = Object.values(DOSE_DATE);
+            const todayIndex = today.getDay();
+            const todayName = allDays[todayIndex];
+            const isTodayMed = !medication.daySlots || medication.daySlots.length === 0 || medication.daySlots.includes(todayName);
+
+            // 오늘 복용한 양 계산
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const todayRecords = medication.records?.filter(
+              (rec) =>
+                rec.timestamp?.startsWith(todayStr) &&
+                rec.status === DOSE_RECORD_STATUS.taken
+            ) || [];
+            const takenAmount = todayRecords.reduce(
+              (sum, rec) => sum + (rec.amount || 0),
+              0
+            );
+            // 총 복용해야 할 양 계산
+            const totalNeeded = medication.doseMethod === DOSE_METHOD.daily
+              ? (medication.amountPerIntake || 1) * (medication.intakeTimesPerDay || 1)
+              : medication.doseAmount;
+
+            // 시간대 표시: total(간단하게)일 때만 '아무때나' 표시
+            let timeText = '';
+            if (medication.doseMethod !== DOSE_METHOD.daily) {
+              timeText = (!medication.timeSlots || medication.timeSlots.length === 0) ? '아무때나' : medication.timeSlots.join(', ');
+            } else {
+              timeText = (medication.timeSlots && medication.timeSlots.length > 0) ? medication.timeSlots.join(', ') : '';
+            }
+
+            // 복용 상태별 테두리 색상 결정 (오늘 복용해야 하는 약만 적용)
+            let borderColor = '#e9ecef';
+            if (isTodayMed) {
+              if (takenAmount === 0) {
+                borderColor = '#ff4d4f'; // 빨강(아예 안 먹음)
+              } else if (takenAmount < totalNeeded) {
+                borderColor = '#ffa500'; // 주황(일부 복용)
+              } else {
+                borderColor = '#28a745'; // 초록(다 먹음)
+              }
+            }
+
+            return (
+              <MedicationCardWrapper key={medication.uuid}>
+                <MedicationCard
+                  taken={isMedicationTakenToday(medication)}
+                  shouldTakeToday={isTodayMed}
+                  style={isTodayMed ? { boxShadow: `0 0 0 2px ${borderColor}` } : {}}
+                >
+                  <MedicationContent>
+                    <MedicationCardHeader>
+                      <MedicationName>{medication.name}</MedicationName>
+                      <CardButtonGroup>
+                        <CardEditButton
+                          onClick={() => {
+                            alert('준비중입니다.');
+                          }}
+                        >
+                          수정
+                        </CardEditButton>
+                        <CardDeleteButton
+                          onClick={() => deleteMedication(medication.uuid)}
+                        >
+                          삭제
+                        </CardDeleteButton>
+                      </CardButtonGroup>
+                    </MedicationCardHeader>
+
+                    {medication.description && (
+                      <MedicationTimeDosage
+                        style={{ color: '#666', marginBottom: '8px' }}
+                      >
+                        📋 {medication.description}
+                      </MedicationTimeDosage>
+                    )}
+
+                    {/* 복용량 표시 방식 개선 */}
+                    <MedicationTimeDosage>
+                      💊 {medication.doseMethod === DOSE_METHOD.daily
+                        ? `1회 ${medication.amountPerIntake || 1}${medication.doseUnit} × ${medication.intakeTimesPerDay || 1}회`
+                        : `총 ${medication.doseAmount}${medication.doseUnit}`
+                      }
+                    </MedicationTimeDosage>
+
+                    {medication.daySlots && medication.daySlots.length > 0 && (
+                      <MedicationTimeDosage>
+                        📅 {formatDaySlots(medication.daySlots)}
+                      </MedicationTimeDosage>
+                    )}
+
+                    {/* 시간대 표시: total(간단하게)일 때만 '아무때나' */}
+                    {timeText && (
+                      <MedicationTimeDosage>
+                        ⏰ {timeText}
+                      </MedicationTimeDosage>
+                    )}
+                  </MedicationContent>
+                  <div style={{ marginTop: 'auto' }}>
+                    {/* 복용 상황 표시 */}
+                    <div style={{
+                      color: '#2196f3',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      marginBottom: '16px',
+                      textAlign: 'center'
+                    }}>
+                      {takenAmount} / {totalNeeded} {medication.doseUnit} 복용
+                    </div>
+                    {/* 버튼 순서 변경 및 크기 조정 (4:6 비율) */}
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => openRecordListModal(medication)}
+                        style={{
+                          flex: '4',
+                          background: 'white',
+                          color: '#2196f3',
+                          border: '2px solid #2196f3',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          padding: '10px 8px',
+                          cursor: 'pointer',
+                          fontWeight: '500',
+                          transition: 'all 0.2s ease',
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor = '#f3f9ff';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor = 'white';
+                        }}
+                      >
+                        기록보기
+                      </button>
+                      <MedicationButton
+                        taken={false}
+                        onClick={() => openRecordInputModal(medication)}
+                        style={{
+                          flex: '6',
+                          fontSize: '14px',
+                          padding: '10px 8px'
+                        }}
+                      >
+                        기록하기
+                      </MedicationButton>
+                    </div>
+                  </div>
+                  {/* 메모가 있을 때만 호버링 툴팁 표시 */}
+                  {medication.memo && (
+                    <MemoTooltip>
+                      📝 {medication.memo}
+                    </MemoTooltip>
+                  )}
+                </MedicationCard>
+              </MedicationCardWrapper>
+            );
+          })}
+        </MedicationGrid>
+      </ContentLayout>
+
+      {notification.isOpen &&
+        createPortal(
+          <NotificationOverlay isOpen={true}>
+            <NotificationDialog type={notification.type}>
+              <NotificationIcon type={notification.type}>
+                {notification.type === 'success' ? '✓' : '✗'}
+              </NotificationIcon>
+              <NotificationTitle type={notification.type}>
+                {notification.title}
+              </NotificationTitle>
+              <NotificationMessage>{notification.message}</NotificationMessage>
+              <NotificationProgress>
+                <NotificationProgressBar type={notification.type} />
+              </NotificationProgress>
+            </NotificationDialog>
+          </NotificationOverlay>,
+          document.body
+        )}
+
+      {isMedicationModalOpen &&
+        createPortal(
+          <ModalOverlay isOpen={true}>
+            <ModalContent>
+              <ModalHeader>
+                <ModalTitle>새 약 추가</ModalTitle>
+                <CloseButton onClick={closeModal}>×</CloseButton>
+              </ModalHeader>
+
+              <TopSection>
+                <InputGroup>
+                  <label htmlFor="medication-name">약 이름*</label>
+                  <input
+                    id="medication-name"
+                    type="text"
+                    value={newMedication.name}
+                    onChange={(e) =>
+                      setNewMedication({
+                        ...newMedication,
+                        name: e.target.value,
+                      })
+                    }
+                    placeholder="약 이름을 입력하세요"
+                  />
+                </InputGroup>
+                <InputGroup>
+                  <label htmlFor="medication-description">약 설명*</label>
+                  <input
+                    id="medication-description"
+                    type="text"
+                    value={newMedication.description}
+                    onChange={(e) =>
+                      setNewMedication({
+                        ...newMedication,
+                        description: e.target.value,
+                      })
+                    }
+                    placeholder="간단한 설명을 입력하세요"
+                  />
+                </InputGroup>
+              </TopSection>
+
+              <DosageSection>
+                <DosageHeader>
+                  <label>복용량 설정</label>
+                  <ToggleButton
+                    onClick={() => {
+                      const newInputType = dosageInputType === 'detailed' ? 'simple' : 'detailed';
+                      setDosageInputType(newInputType);
+                      // dosageInputType 변경 시 doseMethod도 함께 설정
+                      setNewMedication({
+                        ...newMedication,
+                        doseMethod: newInputType === 'simple' ? DOSE_METHOD.asNeeded : DOSE_METHOD.daily,
+                      });
+                    }}
+                    isActive={dosageInputType === 'detailed'}
+                  >
+                    {dosageInputType === 'detailed' ? '간단하게' : '상세하게'}
+                  </ToggleButton>
+                </DosageHeader>
+
+                {dosageInputType === 'detailed' ? (
+                  <DetailedDosageInputs>
+                    <DosageRow>
+                      <DosageInputGroup>
+                        <label>1회 복용량</label>
+                        <input
+                          type="number"
+                          value={newMedication.amountPerIntake || ''}
+                          onChange={(e) =>
+                            setNewMedication({
+                              ...newMedication,
+                              amountPerIntake: Number(e.target.value),
+                            })
+                          }
+                          placeholder="1"
+                        />
+                      </DosageInputGroup>
+                      <DosageInputGroup>
+                        <label>단위</label>
+                        <select
+                          value={newMedication.doseUnit}
+                          onChange={(e) =>
+                            setNewMedication({
+                              ...newMedication,
+                              doseUnit: e.target.value as DOSE_UNIT,
+                            })
+                          }
+                        >
+                          {unitOptions.map((unit) => (
+                            <option key={unit} value={unit}>
+                              {unit}
+                            </option>
+                          ))}
+                        </select>
+                      </DosageInputGroup>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#666',
+                          fontSize: '18px',
+                          fontWeight: '600',
+                        }}
+                      >
+                        ×
+                      </div>
+                      <DosageInputGroup>
+                        <label>하루 복용 횟수</label>
+                        <input
+                          type="number"
+                          value={newMedication.intakeTimesPerDay || ''}
+                          onChange={(e) =>
+                            setNewMedication({
+                              ...newMedication,
+                              intakeTimesPerDay: Number(e.target.value),
+                            })
+                          }
+                          placeholder="3"
+                        />
+                      </DosageInputGroup>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#666',
+                          fontSize: '18px',
+                          fontWeight: '600',
+                        }}
+                      >
+                        회
+                      </div>
+                    </DosageRow>
+                  </DetailedDosageInputs>
+                ) : (
+                  <SimpleDosageInput>
+                    <DosageInputGroup>
+                      <label>총 복용량</label>
+                      <input
+                        type="number"
+                        value={newMedication.doseAmount}
+                        onChange={(e) =>
+                          setNewMedication({
+                            ...newMedication,
+                            doseAmount: Number(e.target.value),
+                          })
+                        }
+                        placeholder="3"
+                      />
+                    </DosageInputGroup>
+                    <DosageInputGroup>
+                      <label>단위</label>
+                      <select
+                        value={newMedication.doseUnit}
+                        onChange={(e) =>
+                          setNewMedication({
+                            ...newMedication,
+                            doseUnit: e.target.value as DOSE_UNIT,
+                          })
+                        }
+                      >
+                        {unitOptions.map((unit) => (
+                          <option key={unit} value={unit}>
+                            {unit}
+                          </option>
+                        ))}
+                      </select>
+                    </DosageInputGroup>
+                  </SimpleDosageInput>
+                )}
+              </DosageSection>
+
+              {dosageInputType === 'detailed' && (
+                <DaySection>
+                  <DaySectionHeader>
+                    <label>복용 요일 선택</label>
+                    <SelectAllButton
+                      isAllSelected={weekDays.every((d) =>
+                        (newMedication.daySlots || []).includes(d)
+                      )}
+                      onClick={toggleAllDays}
+                      type="button"
+                    >
+                      {weekDays.every((d) =>
+                        (newMedication.daySlots || []).includes(d)
+                      )
+                        ? '전체 해제'
+                        : '매일'}
+                    </SelectAllButton>
+                  </DaySectionHeader>
+                  <DayGrid>
+                    {weekDays.map((day) => (
+                      <DayButton
+                        key={day}
+                        isSelected={(newMedication.daySlots || []).includes(day)}
+                        onClick={() => handleDayOfWeekChange(day)}
+                      >
+                        {day}요일
+                      </DayButton>
+                    ))}
+                  </DayGrid>
+                </DaySection>
+              )}
+
+              {dosageInputType === 'detailed' && (
+                <TimeSection>
+                  <TimeSectionHeader>
+                    <label>복용 시간 선택</label>
+                    <TimePresetButtons>
+                      <TimePresetButton onClick={setMorningEvening} type="button">
+                        아침저녁
+                      </TimePresetButton>
+                      <TimePresetButton
+                        onClick={setMorningLunchDinner}
+                        type="button"
+                      >
+                        아침점심저녁
+                      </TimePresetButton>
+                    </TimePresetButtons>
+                  </TimeSectionHeader>
+                  <TimeGrid>
+                    {timeSlotOptions.map((timeSlot: DOSE_TIME) => (
+                      <TimeButton
+                        key={timeSlot}
+                        isSelected={(newMedication.timeSlots || []).includes(
+                          timeSlot
+                        )}
+                        onClick={() => handleTimeSlotChange(timeSlot)}
+                      >
+                        <span style={{ whiteSpace: 'pre-line' }}>{timeSlotOptionsToText[timeSlot]}</span>
+                      </TimeButton>
+                    ))}
+                  </TimeGrid>
+                </TimeSection>
+              )}
+
+              <MemoSection>
+                <MemoButton
+                  type="button"
+                  onClick={() => setShowMemo(!showMemo)}
+                  isActive={showMemo}
+                >
+                  메모 추가 {showMemo ? '▲' : '▼'}
+                </MemoButton>
+                {showMemo && (
+                  <MemoTextarea>
+                    <textarea
+                      value={newMedication.memo}
+                      onChange={(e) =>
+                        setNewMedication({
+                          ...newMedication,
+                          memo: e.target.value,
+                        })
+                      }
+                      placeholder="약에 대한 추가 메모를 입력하세요..."
+                      rows={3}
+                    />
+                  </MemoTextarea>
+                )}
+              </MemoSection>
+
+              <ButtonSection>
+                <CancelButton type="button" onClick={resetMedicationModal}>
+                  초기화
+                </CancelButton>
+                <SaveButton type="button" onClick={addMedication}>
+                  약 추가
+                </SaveButton>
+              </ButtonSection>
+            </ModalContent>
+          </ModalOverlay>,
+          document.body
+        )}
+
+      {isRecordInputModalOpen &&
+        createPortal(
+          <ModalOverlay isOpen={true}>
+            <RecordModalContent>
+              <RecordModalHeader>
+                <h2>{selectedMedicationForRecord?.name} 복용 기록</h2>
+                <CloseButton onClick={closeRecordModal}>×</CloseButton>
+              </RecordModalHeader>
+
+              <RecordDateSection>
+                <label>기록 일자</label>
+                <DateDisplay>{getCurrentDate()}</DateDisplay>
+              </RecordDateSection>
+
+              <TimeInputGroup>
+                <label>기록 시간</label>
+                <input
+                  type="time"
+                  value={recordTime}
+                  onChange={(e) => setRecordTime(e.target.value)}
+                />
+              </TimeInputGroup>
+
+              <InputGroup>
+                <label>기록 상태</label>
+                <StatusToggle>
+                  <StatusButton
+                    isActive={
+                      newMedicineRecord.status === DOSE_RECORD_STATUS.taken
+                    }
+                    statusType="taken"
+                    onClick={() =>
+                      setNewMedicineRecord({
+                        ...newMedicineRecord,
+                        status: DOSE_RECORD_STATUS.taken,
+                      })
+                    }
+                  >
+                    복용
+                  </StatusButton>
+                  <StatusButton
+                    isActive={
+                      newMedicineRecord.status === DOSE_RECORD_STATUS.missed
+                    }
+                    statusType="skipped"
+                    onClick={() =>
+                      setNewMedicineRecord({
+                        ...newMedicineRecord,
+                        status: DOSE_RECORD_STATUS.missed,
+                      })
+                    }
+                  >
+                    건너뜀
+                  </StatusButton>
+                </StatusToggle>
+              </InputGroup>
+
+              <RecordAmountSection
+                isVisible={
+                  newMedicineRecord.status === DOSE_RECORD_STATUS.taken
+                }
+              >
+                <label>복용량</label>
+                <RecordAmountRow>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={newMedicineRecord.amount}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      setNewMedicineRecord({
+                        ...newMedicineRecord,
+                        amount: value,
+                      });
+                    }}
+                    placeholder="1"
+                  />
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      background: '#f8f9fa',
+                      border: '1px solid #dee2e6',
+                      borderRadius: '4px',
+                      color: '#6c757d',
+                      minWidth: '80px',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {selectedMedicationForRecord?.doseUnit || DOSE_UNIT.pill}
+                  </div>
+                </RecordAmountRow>
+              </RecordAmountSection>
+
+              <RecordMemoSection>
+                <RecordMemoButton
+                  type="button"
+                  onClick={() => setShowRecordMemo(!showRecordMemo)}
+                  isActive={showRecordMemo}
+                >
+                  메모 추가 (선택사항) {showRecordMemo ? '▲' : '▼'}
+                </RecordMemoButton>
+                {showRecordMemo && (
+                  <RecordMemoTextarea>
+                    <textarea
+                      value={newMedicineRecord.memo}
+                      onChange={(e) =>
+                        setNewMedicineRecord({
+                          ...newMedicineRecord,
+                          memo: e.target.value,
+                        })
+                      }
+                      placeholder="특이사항이나 부작용 등을 기록하세요..."
+                      rows={3}
+                    />
+                  </RecordMemoTextarea>
+                )}
+              </RecordMemoSection>
+
+              <ButtonSection>
+                <CancelButton onClick={closeRecordModal}>취소</CancelButton>
+                <SaveButton onClick={saveRecord}>기록 저장</SaveButton>
+              </ButtonSection>
+            </RecordModalContent>
+          </ModalOverlay>,
+          document.body
+        )}
+
+      {isRecordListModalOpen &&
+        createPortal(
+          <ModalOverlay isOpen={true}>
+            <ModalContent>
+              <ModalHeader>
+                <ModalTitle>
+                  📋 {selectedMedicationForList?.name} 복용 기록
+                </ModalTitle>
+                <CloseButton onClick={closeRecordListModal}>×</CloseButton>
+              </ModalHeader>
+
+              <div style={{ padding: '20px' }}>
+                {selectedMedicationForList?.records &&
+                selectedMedicationForList.records.length > 0 ? (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {selectedMedicationForList.records
+                      .sort(
+                        (a: MedicationRecord, b: MedicationRecord) =>
+                          new Date(b.timestamp).getTime() -
+                          new Date(a.timestamp).getTime()
+                      )
+                      .map((record: MedicationRecord) => {
+                        const date = new Date(record.timestamp);
+                        const isToday =
+                          date.toDateString() === new Date().toDateString();
+                        const dateStr = date.toLocaleDateString('ko-KR', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          weekday: 'short',
+                        });
+                        const timeStr = date.toLocaleTimeString('ko-KR', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        });
+
+                        return (
+                          <div
+                            key={record.uuid}
+                            style={{
+                              background: isToday ? '#f0f8ff' : '#f8f9fa',
+                              border: `2px solid ${isToday ? '#2196f3' : '#e9ecef'}`,
+                              borderRadius: '12px',
+                              padding: '16px',
+                              position: 'relative',
+                              width: '80%',
+                              maxWidth: '80%',
+                            }}
+                          >
+                            {isToday && (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  top: '8px',
+                                  left: '12px',
+                                  background: '#2196f3',
+                                  color: 'white',
+                                  fontSize: '10px',
+                                  padding: '2px 6px',
+                                  borderRadius: '10px',
+                                  fontWeight: '600',
+                                  zIndex: 1,
+                                }}
+                              >
+                                오늘
+                              </div>
+                            )}
+
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'flex-start',
+                                marginBottom: '8px',
+                                marginTop: isToday ? '20px' : '0',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '12px',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontSize: '16px',
+                                    fontWeight: '600',
+                                    color: '#333',
+                                  }}
+                                >
+                                  {dateStr}
+                                </div>
+                                <div
+                                  style={{ fontSize: '14px', color: '#666' }}
+                                >
+                                  {timeStr}
+                                </div>
+                              </div>
+                              <div
+                                style={{
+                                  background:
+                                    record.status === DOSE_RECORD_STATUS.taken
+                                      ? '#4caf50'
+                                      : '#f44336',
+                                  color: 'white',
+                                  padding: '4px 12px',
+                                  borderRadius: '16px',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                }}
+                              >
+                                {record.status === DOSE_RECORD_STATUS.taken
+                                  ? '✓ 복용완료'
+                                  : '✗ 건너뜀'}
+                              </div>
+                            </div>
+
+                            {record.status === DOSE_RECORD_STATUS.taken && (
+                              <div
+                                style={{
+                                  fontSize: '14px',
+                                  color: '#666',
+                                  marginBottom: '8px',
+                                }}
+                              >
+                                💊 복용량:{' '}
+                                {record.amount && record.amount > 0
+                                  ? `${record.amount}${selectedMedicationForList?.doseUnit || '정'}`
+                                  : '기록되지 않음'}
+                              </div>
+                            )}
+
+                            {record.memo && (
+                              <div
+                                style={{
+                                  background: 'rgba(255, 255, 255, 0.7)',
+                                  padding: '8px 12px',
+                                  borderRadius: '6px',
+                                  fontSize: '14px',
+                                  color: '#555',
+                                  fontStyle: 'italic',
+                                }}
+                              >
+                                📝 {record.memo}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      textAlign: 'center',
+                      padding: '40px 20px',
+                      color: '#666',
+                    }}
+                  >
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>
+                      📝
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '18px',
+                        fontWeight: '500',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      아직 복용 기록이 없습니다
+                    </div>
+                    <div style={{ fontSize: '14px' }}>
+                      &ldquo;기록하기&rdquo; 버튼을 눌러 첫 복용 기록을
+                      남겨보세요!
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <ButtonSection>
+                <SaveButton onClick={closeRecordListModal}>닫기</SaveButton>
+              </ButtonSection>
+            </ModalContent>
+          </ModalOverlay>,
+          document.body
+        )}
     </MedicationWrapper>
   );
 };

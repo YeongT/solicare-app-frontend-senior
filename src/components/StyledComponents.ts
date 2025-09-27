@@ -38,10 +38,10 @@ export const GridContainer = styled.div`
 // Status Badge
 export const StatusBadge = styled.span<StatusBadgeProps>`
   display: inline-block;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 16px;
-  font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
   background-color: ${(props) =>
     props.status === 'taken' ? '#d4edda' : '#f8d7da'};
   color: ${(props) => (props.status === 'taken' ? '#155724' : '#721c24')};

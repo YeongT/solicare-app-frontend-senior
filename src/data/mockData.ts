@@ -1,36 +1,101 @@
+import {
+  Medication,
+  DOSE_METHOD,
+  DOSE_UNIT,
+  DOSE_DATE,
+  DOSE_TIME,
+  DOSE_RECORD_STATUS,
+} from '../types/apiTypes';
+
 // Mock data for the application
-export const mockMedications = [
+export const mockMedications: Medication[] = [
   {
-    id: 1,
+    uuid: 'med-1-uuid-2024',
     name: '혈압약',
-    time: '08:00',
-    taken: true,
-    dosage: '1정',
-    note: '식전 복용',
+    description: '고혈압 치료용 약물',
+    doseMethod: DOSE_METHOD.daily,
+    doseUnit: DOSE_UNIT.pill,
+    doseAmount: 1,
+    amountPerIntake: 1,
+    intakeTimesPerDay: 1,
+    memo: '식전 복용',
+    daySlots: [
+      DOSE_DATE.monday,
+      DOSE_DATE.tuesday,
+      DOSE_DATE.wednesday,
+      DOSE_DATE.thursday,
+      DOSE_DATE.friday,
+      DOSE_DATE.saturday,
+      DOSE_DATE.sunday,
+    ],
+    timeSlots: [DOSE_TIME.morning],
+    records: [
+      {
+        uuid: 'record-1-1',
+        timestamp: '2025-09-22T08:00:00',
+        status: DOSE_RECORD_STATUS.taken,
+        amount: 1,
+        memo: '',
+      },
+      {
+        uuid: 'record-1-2',
+        timestamp: '2025-09-23T08:00:00',
+        status: DOSE_RECORD_STATUS.taken,
+        amount: 1,
+        memo: '',
+      },
+      {
+        uuid: 'record-1-3',
+        timestamp: '2025-09-24T08:00:00',
+        status: DOSE_RECORD_STATUS.missed,
+        amount: 0,
+        memo: '복용하지 못함',
+      },
+    ],
   },
   {
-    id: 2,
-    name: '당뇨약',
-    time: '12:00',
-    taken: false,
-    dosage: '1정',
-    note: '식후 복용',
-  },
-  {
-    id: 3,
+    uuid: 'med-2-uuid-2024',
     name: '비타민',
-    time: '18:00',
-    taken: false,
-    dosage: '1정',
-    note: '식후 복용',
-  },
-  {
-    id: 4,
-    name: '수면보조제',
-    time: '21:00',
-    taken: false,
-    dosage: '1정',
-    note: '취침 30분 전 복용',
+    description: '종합 비타민 보충제',
+    doseMethod: DOSE_METHOD.total,
+    doseUnit: DOSE_UNIT.pill,
+    doseAmount: 2,
+    amountPerIntake: 2,
+    intakeTimesPerDay: 1,
+    memo: '식후 복용',
+    daySlots: [
+      DOSE_DATE.monday,
+      DOSE_DATE.tuesday,
+      DOSE_DATE.wednesday,
+      DOSE_DATE.thursday,
+      DOSE_DATE.friday,
+      DOSE_DATE.saturday,
+      DOSE_DATE.sunday,
+    ],
+    timeSlots: [DOSE_TIME.dinner],
+    records: [
+      {
+        uuid: 'record-2-1',
+        timestamp: '2025-09-22T18:00:00',
+        status: DOSE_RECORD_STATUS.taken,
+        amount: 2,
+        memo: '',
+      },
+      {
+        uuid: 'record-2-2',
+        timestamp: '2025-09-23T18:00:00',
+        status: DOSE_RECORD_STATUS.taken,
+        amount: 1,
+        memo: '1개만 복용',
+      },
+      {
+        uuid: 'record-2-3',
+        timestamp: '2025-09-24T18:00:00',
+        status: DOSE_RECORD_STATUS.missed,
+        amount: 0,
+        memo: '복용하지 못함',
+      },
+    ],
   },
 ];
 
@@ -58,59 +123,6 @@ export const mockExerciseData = {
   ],
 };
 
-interface Message {
-  id: number;
-  type: 'user' | 'ai';
-  message: string;
-  timestamp: string;
-}
-
-export const mockChatHistory: Message[] = [
-  {
-    id: 1,
-    type: 'user',
-    message: '오늘 약을 먹었는지 확인해주세요',
-    timestamp: '2024-01-15 10:30',
-  },
-  {
-    id: 2,
-    type: 'ai',
-    message:
-      '네, 확인해드리겠습니다. 오늘 아침 혈압약은 복용하셨고, 점심 당뇨약과 저녁 비타민은 아직 복용하지 않으셨습니다.',
-    timestamp: '2024-01-15 10:31',
-  },
-  {
-    id: 3,
-    type: 'user',
-    message: '운동은 얼마나 했나요?',
-    timestamp: '2024-01-15 10:32',
-  },
-  {
-    id: 4,
-    type: 'ai',
-    message:
-      '오늘은 3,240보를 걸으셨고, 2.1km를 이동하셨습니다. 총 25분간 운동하셨네요. 정말 좋습니다!',
-    timestamp: '2024-01-15 10:33',
-  },
-];
-
-export const mockDietData = {
-  today: {
-    consumedCalories: 420,
-    targetCalories: 1800,
-    mealsCompleted: 1,
-    totalMeals: 4,
-  },
-  nutrients: {
-    protein: 15,
-    carbs: 65,
-    fat: 8,
-    targetProtein: 120,
-    targetCarbs: 250,
-    targetFat: 60,
-  },
-};
-
 export const mockNotifications = [
   {
     id: 1,
@@ -125,13 +137,6 @@ export const mockNotifications = [
     message: '오늘 걸음 수가 목표에 가까워요!',
     time: '16:30',
     type: 'exercise',
-  },
-  {
-    id: 3,
-    title: '🍽️ 식단 알림',
-    message: '저녁 식사 시간이 다가왔어요',
-    time: '18:00',
-    type: 'diet',
   },
   {
     id: 4,

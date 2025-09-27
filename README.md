@@ -1,70 +1,53 @@
-# Getting Started with Create React App
+# Solicare App Frontend (Senior)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+건강 관리 플랫폼의 프론트엔드 애플리케이션입니다. 식사, 운동, 약 복용, 채팅 등 다양한 건강 관리 기능을 제공합니다.
 
-## Available Scripts
+## 🛠️ 기술 스택
+- React (TypeScript)
 
-In the project directory, you can run:
+## 📦 폴더 구조
+```
+src/
+  components/         # UI 및 페이지별 컴포넌트
+  contexts/           # 전역 상태 관리 (AuthContext 등)
+  data/               # 목업 데이터
+  hooks/              # 커스텀 훅
+  pages/              # 주요 페이지 컴포넌트
+  styles/             # 글로벌/페이지별 스타일
+  types/              # 타입 정의
+  utils/              # 유틸리티 함수
+public/               # 정적 파일
+```
 
-### `npm start`
+## 🚀 설치 및 실행
+1. 의존성 설치
+   ```bash
+   yarn install
+   ```
+2. 개발 서버 실행
+   ```bash
+   yarn start
+   ```
+3. 빌드
+   ```bash
+   yarn run build
+   ```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 🖥️ 주요 기능
+- 회원가입/로그인/로그아웃
+- 대시보드: 오늘의 식사, 운동, 약 복용 현황
+- 식사/운동/약 복용 기록 및 관리
+- 채팅 페이지
+- 반응형 UI
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 📝 환경 변수
+- 필요시 `.env` 파일에 환경 변수 설정
 
-### `npm test`
+## 🤝 기여 방법
+1. 이슈 등록 및 포크
+2. 브랜치 생성 후 작업
+3. PR 요청
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 📄 라이선스
+MIT License
 
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
