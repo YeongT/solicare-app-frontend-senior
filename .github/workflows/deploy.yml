@@ -1,129 +1,65 @@
-name: Deploy to lightsail instance
+# 배포 워크플로우: self-hosted runner에서 동작하도록 설계되어 있습니다.
+# 가정: 서버에 GitHub Actions self-hosted runner가 설치되어 있고,
+# 레이블에 `self-hosted`, `linux` 등이 붙어 있습니다. 레이블은 환경에 맞게 수정하세요.
+
+name: Deploy (self-hosted)
 
 on:
   push:
-    branches: [ master ]
-    tags:
-      - "test-*"
-
-permissions:
-  contents: read
-  deployments: write
-  statuses: write
+    branches: [ main ]
+  workflow_dispatch: {}
 
 jobs:
-  build:
-    runs-on: self-hosted
-    environment: 'aws-lightsail-solicare-instance'
-    outputs:
-      deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-    steps:
-      - uses: actions/checkout@v4
+  build-and-deploy:
+    # 기본적으로 self-hosted runner에서 실행하도록 설정합니다.
+    # 만약 GitHub hosted runner(ubuntu-latest)를 사용하려면 아래 라인을 변경하세요.
+    runs-on: [self-hosted, linux]
 
-      - name: Setup Node.js
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-
-      - name: Enable Yarn
-        run: corepack enable
-
-      - name: Cache Yarn dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/yarn
-            node_modules
-          key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            yarn-${{ runner.os }}-
+          node-version: '18'
 
       - name: Install dependencies
-        run: yarn install
+        run: npm ci
 
-      - name: Create GitHub Deployment
-        id: deployment
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const deployment = await github.rest.repos.createDeployment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: context.sha,
-              environment: 'aws-lightsail-solicare-instance',
-              transient_environment: false,
-              auto_inactive: true,
-              required_contexts: [],
-              auto_merge: false
-            });
-            core.setOutput('deployment_id', deployment.data.id)
+      - name: Build
+        run: npm run build
 
-      - name: Build (yarn)
-        shell: bash
+      - name: Make deploy script executable
+        run: chmod +x scripts/deploy_with_healthcheck.sh
+
+      - name: Run health-check deploy script
         env:
-          CI: ${{ vars.CI || 'false' }}
-          REACT_APP_BASE_API_URL: ${{ vars.BASE_API_URL }}
-        run: yarn build
-
-      - name: Run tests if test files exist
+          # 필요시 시크릿 또는 환경에 맞게 오버라이드하세요
+          PROD_DIR: /storage/web/solicare/html/app
+          CHECK_PORT: 8181
+          CHECK_PATH: /
+          CHECK_TIMEOUT: 30
         run: |
-          if ls src/**/*.{spec,test}.{js,jsx,ts,tsx} 1> /dev/null 2>&1; then
-            yarn test --watchAll=false
-          else
-            echo "No test files found, skipping tests."
-          fi
+          echo "Running deploy script"
+          ./scripts/deploy_with_healthcheck.sh
 
-      - name: Deployment Status Failure (Build Failed)
-        if: failure() && steps.deployment.outputs.deployment_id != ''
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: ${{ steps.deployment.outputs.deployment_id }},
-              state: 'failure',
-              description: 'Build or test failed',
-              log_url: `https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ github.job }}`
-            })
+# Optional: 이미지 기반 배포 예시 (주석)
+# - 이미지 빌드 후 레지스트리에 push하고 서버에서 pull/compose로 전환하는 흐름이 필요하면
+#   아래 내용을 참고해 워크플로우를 확장하세요.
+#
+# - name: Log in to registry
+#   uses: docker/login-action@v2
+#   with:
+#     registry: ghcr.io
+#     username: ${{ github.actor }}
+#     password: ${{ secrets.GITHUB_TOKEN }}
+#
+# - name: Build and push image
+#   uses: docker/build-push-action@v4
+#   with:
+#     push: true
+#     tags: ghcr.io/${{ github.repository_owner }}/solicare-frontend:latest
+#
+# 이후 서버에서 docker pull && docker-compose up -d 하도록 구성하면 됩니다.
 
-  deploy:
-    runs-on: self-hosted
-    environment: 'aws-lightsail-solicare-instance'
-    needs: build
-    steps:
-      - name: Ensure target directory exists
-        run: sudo mkdir -p /usr/share/nginx/html/senior
-
-      - name: Remove old files in target directory
-        run: sudo rm -rf /usr/share/nginx/html/senior/*
-
-      - name: Move build files to nginx directory
-        run: sudo mv build/* /usr/share/nginx/html/senior/
-
-      - name: Deployment Status Success
-        if: success()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: ${{ needs.build.outputs.deployment_id }},
-              state: 'success',
-              environment_url: '${{ vars.HOSTING_URL }}',
-              log_url: `https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ github.job }}`
-            })
-
-      - name: Deployment Status Failure
-        if: failure()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: ${{ needs.build.outputs.deployment_id }},
-              state: 'failure',
-              log_url: `https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ github.job }}`
-            })

@@ -24,7 +24,8 @@
     "recharts": "^3.1.2",
     "styled-components": "^6.1.19",
     "typescript": "^4.4.2",
-    "web-vitals": "^2.1.0"
+    "web-vitals": "^2.1.0",
+    "serve": "^14.2.0"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -32,7 +33,8 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "mock-server": "json-server --watch src/apiMock/db.json --port 3001",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "deploy:docker": "npm run build && docker-compose up -d --build"
   },
   "eslintConfig": {
     "extends": [
