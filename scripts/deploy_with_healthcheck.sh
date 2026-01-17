@@ -10,7 +10,7 @@ set -euo pipefail
 # 4) 성공하면 production 디렉터리에 rsync로 반영하고 nginx 컨테이너를 재시작
 
 # 설정(필요시 환경변수로 오버라이드 가능)
-BUILD_CMD="npm run build"
+BUILD_CMD="yarn build"
 PROD_DIR="${PROD_DIR:-/storage/web/solicare/html/app}"
 TMP_DIR="$(mktemp -d /tmp/solicare_build.XXXX)"
 CHECK_PORT="${CHECK_PORT:-8181}"
@@ -67,13 +67,5 @@ else
   cp -r "$TMP_DIR"/* "$PROD_DIR"/
 fi
 
-# 6) nginx 컨테이너 재시작 (docker-compose 사용 중이라면 서비스 재시작)
-if [ -f docker-compose.yml ]; then
-  echo "[deploy] docker-compose로 nginx 서비스 재시작 시도"
-  docker-compose restart nginx || docker-compose up -d --no-deps --build nginx || true
-else
-  echo "[deploy] docker-compose.yml 없음 — 컨테이너를 수동으로 재시작하세요"
-fi
-
-echo "[deploy] 완료"
+echo "[deploy] 완료 - 파일이 $PROD_DIR 에 배포됨"
 

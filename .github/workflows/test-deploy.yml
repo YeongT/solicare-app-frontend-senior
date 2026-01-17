@@ -3,8 +3,6 @@ name: Test Build & Test
 on:
   pull_request:
     branches: [ master ]
-  push:
-    branches: [ deploy ]
 
 permissions:
   contents: read
@@ -17,7 +15,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '18'
       - name: Enable Yarn
         run: corepack enable
       - name: Cache Yarn dependencies
@@ -30,7 +28,7 @@ jobs:
           restore-keys: |
             yarn-${{ runner.os }}-
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --frozen-lockfile
       - name: Build (yarn)
         env:
           CI: ${{ vars.CI || 'false' }}

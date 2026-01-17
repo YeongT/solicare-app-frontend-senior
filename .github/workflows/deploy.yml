@@ -6,7 +6,7 @@ name: Deploy (self-hosted)
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   workflow_dispatch: {}
 
 jobs:
@@ -24,42 +24,20 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Enable Yarn
+        run: corepack enable
 
-      - name: Build
-        run: npm run build
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
 
       - name: Make deploy script executable
         run: chmod +x scripts/deploy_with_healthcheck.sh
 
       - name: Run health-check deploy script
         env:
-          # 필요시 시크릿 또는 환경에 맞게 오버라이드하세요
-          PROD_DIR: /storage/web/solicare/html/app
-          CHECK_PORT: 8181
-          CHECK_PATH: /
-          CHECK_TIMEOUT: 30
-        run: |
-          echo "Running deploy script"
-          ./scripts/deploy_with_healthcheck.sh
-
-# Optional: 이미지 기반 배포 예시 (주석)
-# - 이미지 빌드 후 레지스트리에 push하고 서버에서 pull/compose로 전환하는 흐름이 필요하면
-#   아래 내용을 참고해 워크플로우를 확장하세요.
-#
-# - name: Log in to registry
-#   uses: docker/login-action@v2
-#   with:
-#     registry: ghcr.io
-#     username: ${{ github.actor }}
-#     password: ${{ secrets.GITHUB_TOKEN }}
-#
-# - name: Build and push image
-#   uses: docker/build-push-action@v4
-#   with:
-#     push: true
-#     tags: ghcr.io/${{ github.repository_owner }}/solicare-frontend:latest
-#
-# 이후 서버에서 docker pull && docker-compose up -d 하도록 구성하면 됩니다.
+          PROD_DIR: ${{ vars.PROD_DIR }}
+          CHECK_PORT: ${{ vars.CHECK_PORT || '8181' }}
+          CHECK_PATH: ${{ vars.CHECK_PATH || '/' }}
+          CHECK_TIMEOUT: ${{ vars.CHECK_TIMEOUT || '30' }}
+        run: ./scripts/deploy_with_healthcheck.sh
 

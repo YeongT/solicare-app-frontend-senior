@@ -24,8 +24,7 @@
     "recharts": "^3.1.2",
     "styled-components": "^6.1.19",
     "typescript": "^4.4.2",
-    "web-vitals": "^2.1.0",
-    "serve": "^14.2.0"
+    "web-vitals": "^2.1.0"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -34,7 +33,7 @@
     "eject": "react-scripts eject",
     "mock-server": "json-server --watch src/apiMock/db.json --port 3001",
     "format": "prettier --write src/",
-    "deploy:docker": "npm run build && docker-compose up -d --build"
+    "deploy:docker": "yarn build && docker build -t solicare-frontend . && docker rm -f solicare-nginx 2>/dev/null; docker run -d --name solicare-nginx -p 8150:80 --restart unless-stopped solicare-frontend"
   },
   "eslintConfig": {
     "extends": [
