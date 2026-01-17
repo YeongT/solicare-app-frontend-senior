@@ -1,8 +1,4 @@
-# 배포 워크플로우: self-hosted runner에서 동작하도록 설계되어 있습니다.
-# 가정: 서버에 GitHub Actions self-hosted runner가 설치되어 있고,
-# 레이블에 `self-hosted`, `linux` 등이 붙어 있습니다. 레이블은 환경에 맞게 수정하세요.
-
-name: Deploy (self-hosted)
+name: Deploy Production
 
 on:
   push:
@@ -11,9 +7,8 @@ on:
 
 jobs:
   build-and-deploy:
-    # 기본적으로 self-hosted runner에서 실행하도록 설정합니다.
-    # 만약 GitHub hosted runner(ubuntu-latest)를 사용하려면 아래 라인을 변경하세요.
     runs-on: [self-hosted, linux]
+    environment: production
 
     steps:
       - name: Checkout repository
